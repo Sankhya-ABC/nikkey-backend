@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateUsersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -21,7 +21,18 @@ return new class extends Migration
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+            $table->engine = 'InnoDB';
+            $table->charset = 'utf8';
+            $table->collation = 'utf8_general_ci';
         });
+
+        DB::table('users')->insert([
+            'name' => 'Admin',
+            'email' => 'admin@teste.com',
+            'password' => Hash::make('123456'), 
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
     }
 
     /**
@@ -33,4 +44,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('users');
     }
-};
+}
