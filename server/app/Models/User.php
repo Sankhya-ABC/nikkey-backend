@@ -41,4 +41,14 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function tipoUsuario()
+    {
+        return $this->belongsTo(\App\Models\TipoUsuario::class, 'tipo_usuario_id');
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(\App\Models\Cliente::class, 'cliente_id');
+    }
 }
