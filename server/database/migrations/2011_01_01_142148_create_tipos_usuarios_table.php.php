@@ -11,14 +11,13 @@ return new class extends Migration
     {
         Schema::create('tipos_usuarios', function (Blueprint $table) {
             $table->id();
-            $table->string('nome')->unique(); 
+            $table->string('descricao')->unique(); 
             $table->timestamps();
         });
 
         DB::table('tipos_usuarios')->insert([
-            ['nome' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
-            ['nome' => 'Gerente', 'created_at' => now(), 'updated_at' => now()],
-            ['nome' => 'Operador', 'created_at' => now(), 'updated_at' => now()],
+            ['descricao' => 'ADMIN', 'created_at' => now(), 'updated_at' => now()],
+            ['descricao' => 'COMMON', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
