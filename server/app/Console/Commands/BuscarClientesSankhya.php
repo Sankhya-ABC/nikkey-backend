@@ -25,7 +25,6 @@ class BuscarClientesSankhya extends Command
 
         $service = new SankhyaLoadRecordsService();
 
-        // Busca todos os registros de uma vez usando fetchAll()
         $records = $service->fetchAll(
             token: $token,
             rootEntity: 'Parceiro',
@@ -46,22 +45,35 @@ class BuscarClientesSankhya extends Command
             return 0;
         }
 
-        $clientes = collect($records)->map(fn($cli) => [
-            'codparc_snk'        => $cli['f0']['$'] ?? null,
-            'nome_fantasia'      => $cli['f1']['$'] ?? null,
-            'razao_social'       => $cli['f2']['$'] ?? null,
-            'codparc_matriz_snk' => $cli['f3']['$'] ?? null,
-            'numero'             => $cli['f4']['$'] ?? null,
-            'complemento'        => $cli['f5']['$'] ?? null,
-            'cep'                => $cli['f6']['$'] ?? null,
-            'ativo'              => isset($cli['f7']['$']) && $cli['f7']['$'] === 'S' ? 1 : 0,
-            'logradouro'         => $cli['f8']['$'] ?? null,
-            'bairro'             => $cli['f9']['$'] ?? null,
-            'cidade'             => $cli['f10']['$'] ?? null,
-            'estado'             => $cli['f11']['$'] ?? null,
-            'created_at'         => now(),
-            'updated_at'         => now(),
-        ])->filter(fn($c) => !empty($c['codparc_snk']));
+        $clean = function ($value) {
+            if (!is_string($value)) {
+                return $value; 
+            }
+
+            $value = trim(preg_replace('/\s+/', ' ', $value));
+
+            return $value === '' ? null : $value;
+        };
+
+        $clientes = collect($records)->map(function ($cli) use ($clean) {
+
+            return [
+                'codparc_snk'        => $clean($cli['f0']['$'] ?? null),
+                'nome_fantasia'      => $clean($cli['f1']['$'] ?? null),
+                'razao_social'       => $clean($cli['f2']['$'] ?? null),
+                'codparc_matriz_snk' => $clean($cli['f3']['$'] ?? null),
+                'numero'             => $clean($cli['f4']['$'] ?? null),
+                'complemento'        => $clean($cli['f5']['$'] ?? null),
+                'cep'                => $clean($cli['f6']['$'] ?? null),
+                'ativo'              => isset($cli['f7']['$']) && $cli['f7']['$'] === 'S' ? 1 : 0,
+                'logradouro'         => $clean($cli['f8']['$'] ?? null),
+                'bairro'             => $clean($cli['f9']['$'] ?? null),
+                'cidade'             => $clean($cli['f10']['$'] ?? null),
+                'estado'             => $clean($cli['f11']['$'] ?? null),
+                'created_at'         => now(),
+                'updated_at'         => now(),
+            ];
+        })->filter(fn($c) => !empty($c['codparc_snk']));
 
         $total = $clientes->count();
 
@@ -69,7 +81,7 @@ class BuscarClientesSankhya extends Command
             $clientes->chunk(500)->each(function ($chunk) {
                 Cliente::upsert(
                     $chunk->toArray(),
-                    ['codparc_snk'], // chave única
+                    ['codparc_snk'], 
                     ['nome_fantasia','logradouro','bairro','cidade','estado','numero','cep','updated_at']
                 );
             });

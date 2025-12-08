@@ -7,17 +7,15 @@ use Illuminate\Http\Request;
 
 class ClienteController extends Controller
 {
-    /**
-     * Retorna todos os clientes
-     */
-    public function index()
+
+    public function index(Request $request)
     {
-        // Carrega usuários + tipo usuário + departamento
-        $clientes = Cliente::with(['usuarios.tipoUsuario', 'usuarios.departamento'])->get();
+        $perPage = $request->query('per_page', 15);
+        
+        $clientes = Cliente::with(['usuarios.tipoUsuario', 'usuarios.departamento'])
+            ->paginate($perPage);
 
-        $clientesFormatados = $clientes->map(function ($cliente) {
-
-            // Pegamos somente o primeiro usuário vinculado (caso exista)
+        $clientesFormatados = $clientes->getCollection()->map(function ($cliente) {
             $user = $cliente->usuarios->first();
 
             return [
@@ -39,19 +37,15 @@ class ClienteController extends Controller
                 'cep' => $cliente->cep,
                 'contato' => $cliente->contato ?? "",
                 'telefone' => $cliente->telefone ?? "",
-                
-                // Campos fixos ou vindos do usuário
                 'funcao' => '',
                 'fax' => '',
                 'email' => $cliente->email ?? '',
                 'observacoes' => '',
 
-                // Campos de acesso vindos do usuário
                 'nomeAcesso' => $user ? $user->name : "",
                 'emailAcesso' => $user ? $user->email : "",
                 'departamento' => $user && $user->departamento ? $user->departamento->descricao : "",
 
-                // Senha nunca é retornada (segurança) → string vazia
                 'senha' => "",
                 'confirmarSenha' => "",
 
@@ -60,12 +54,19 @@ class ClienteController extends Controller
             ];
         });
 
-        return response()->json($clientesFormatados);
+        $clientes->setCollection($clientesFormatados);
+
+        return response()->json([
+            'data' => $clientes->items(),
+            'meta' => [
+                'current_page' => $clientes->currentPage(),
+                'per_page' => $clientes->perPage(),
+                'total' => $clientes->total(),
+                'last_page' => $clientes->lastPage(),
+            ]
+        ]);
     }
 
-    /**
-     * Retorna um cliente específico
-     */
     public function show($id)
     {
         $cliente = Cliente::with(['usuarios.tipoUsuario', 'usuarios.departamento'])
