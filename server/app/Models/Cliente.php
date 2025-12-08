@@ -12,7 +12,6 @@ class Cliente extends Model
     protected $fillable = [
         'codparc_snk',
         'codparc_matriz_snk',
-        'cliente_pai_id',
         'razao_social',
         'nome_fantasia',
         'cnpj_cpf',
@@ -29,20 +28,25 @@ class Cliente extends Model
         'contato',
         'telefone',
         'email',
+        'ativo'
     ];
 
-    public function grupo()
-    {
-        return $this->belongsTo(Cliente::class, 'cliente_pai_id');
-    }
+    protected $casts = [
+        'tem_contrato' => 'boolean',
+        'ativo' => 'boolean',
+        'validade_certificado' => 'date',
+    ];
 
-    public function filiais()
-    {
-        return $this->hasMany(Cliente::class, 'cliente_pai_id');
-    }
-
+    // Usuario(s) vinculados
     public function usuarios()
     {
-        return $this->hasMany(\App\Models\User::class, 'cliente_id');
+        return $this->hasMany(User::class);
+    }
+
+    // Ordens de serviço do cliente
+    public function ordensServico()
+    {
+        return $this->hasMany(OrdemServico::class, 'cliente_id');
     }
 }
+

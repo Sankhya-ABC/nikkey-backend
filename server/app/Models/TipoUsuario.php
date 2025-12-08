@@ -11,7 +11,7 @@ class TipoUsuario extends Model
 
     protected $table = 'tipos_usuarios';
 
-    protected $fillable = ['nome'];
+    protected $fillable = ['descricao'];
 
     public function usuarios()
     {

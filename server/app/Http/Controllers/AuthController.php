@@ -28,18 +28,42 @@ class AuthController extends Controller
 
         $expirationMinutes = config('sanctum.expiration');
 
+        $user = User::with('tipoUsuario', 'departamento', 'cliente')->find(Auth::id());
+
         return response()->json([
             'message' => 'Login realizado com sucesso',
-            'user' => $user,
+            'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'cliente_id' => $user->cliente_id,
+                    'cliente' => $user->cliente->nome_fantasia ?? null,
+                    'tipo_usuario_id' => $user->tipo_usuario_id,
+                    'tipo_usuario' => $user->tipoUsuario->descricao ?? null,
+                    'departamento_id' => $user->departamento_id,
+                    'departamento' => $user->departamento->nome ?? null
+            ],
             'token' => $token,
-            'expires_in' => $expirationMinutes * 60 
+            'expires_in' => $expirationMinutes 
         ]);
     }
 
     public function me(Request $request)
     {
-        return response()->json($request->user());
-    }
+    $user = $request->user()->load('tipoUsuario', 'departamento', 'cliente');
+
+    return response()->json([
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'cliente_id' => $user->cliente_id,
+        'cliente' => $user->cliente->nome_fantasia ?? null,
+        'tipo_usuario_id' => $user->tipo_usuario_id,
+        'tipo_usuario' => $user->tipoUsuario->descricao ?? null,
+        'departamento_id' => $user->departamento_id,
+        'departamento' => $user->departamento->nome ?? null
+    ]); 
+   }
 
     public function logout(Request $request)
     {

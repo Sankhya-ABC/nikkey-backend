@@ -11,15 +11,17 @@ return new class extends Migration
         Schema::create('clientes', function (Blueprint $table) {
             $table->id();
 
-            $table->integer('codparc_snk')->unique();
-            $table->integer('codparc_matriz_snk')->nullable(); 
+            $table->unsignedBigInteger('codparc_snk')->unique()->index();
+            $table->unsignedBigInteger('codparc_matriz_snk')->nullable()->index();
+
             $table->string('razao_social')->nullable();
             $table->string('nome_fantasia')->nullable();
-            $table->string('cnpj_cpf')->nullable();
+            $table->string('cnpj_cpf', 18)->nullable()->index();
             $table->date('validade_certificado')->nullable();
             $table->string('tipo_atividade')->nullable();
             $table->boolean('tem_contrato')->default(false);
 
+            // Endereço
             $table->string('logradouro')->nullable();
             $table->string('complemento')->nullable();
             $table->string('numero', 20)->nullable();
@@ -27,8 +29,8 @@ return new class extends Migration
             $table->string('cidade')->nullable();
             $table->string('estado', 2)->nullable();
             $table->string('cep', 10)->nullable();
+            $table->boolean('ativo')->default(true);
 
-            // Contato
             $table->string('contato')->nullable();
             $table->string('telefone', 20)->nullable();
             $table->string('email')->nullable();
