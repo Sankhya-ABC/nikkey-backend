@@ -10,7 +10,16 @@ class ClienteController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) $request->query('per_page', 15);
-      
+        $page    = (int) $request->query('page', 1);
+
+        $clientes = Cliente::with([
+            'usuarios.tipoUsuario',
+            'usuarios.departamento',
+            'endereco',
+            'bairro',
+            'cidade.uf'
+        ])->paginate($perPage, ['*'], 'page', $page);
+
         $clientesFormatados = $clientes->getCollection()->map(function ($cliente) {
 
             $user = $cliente->usuarios->first();
@@ -57,11 +66,12 @@ class ClienteController extends Controller
             ];
         });
 
-        $clientes->setCollection($clientesFormatados); 
+        $clientes->setCollection($clientesFormatados);
 
         return response()->json([
             'data' => $clientes->items(),
             'meta' => [
+                'page'         => $page,
                 'current_page' => $clientes->currentPage(),
                 'per_page'     => $clientes->perPage(),
                 'total'        => $clientes->total(),
