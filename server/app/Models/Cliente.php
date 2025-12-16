@@ -4,30 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+use App\Models\OrdemServico;   
+use App\Models\Endereco;
 
 class Cliente extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
+       protected $fillable = [
         'codparc_snk',
         'codparc_matriz_snk',
-        'razao_social',
         'nome_fantasia',
-        'cnpj_cpf',
-        'validade_certificado',
-        'tipo_atividade',
-        'tem_contrato',
-        'logradouro',
-        'complemento',
+        'razao_social',
+        'endereco_id',
+        'bairro_id',
+        'cidade_id',
         'numero',
-        'bairro',
-        'cidade',
-        'estado',
+        'complemento',
         'cep',
-        'contato',
-        'telefone',
-        'email',
         'ativo'
     ];
 
@@ -37,16 +32,41 @@ class Cliente extends Model
         'validade_certificado' => 'date',
     ];
 
-    // Usuario(s) vinculados
     public function usuarios()
     {
         return $this->hasMany(User::class);
     }
 
-    // Ordens de serviço do cliente
     public function ordensServico()
     {
         return $this->hasMany(OrdemServico::class, 'cliente_id');
+    }
+
+     public function endereco()
+    {
+        return $this->belongsTo(Endereco::class);
+    }
+
+    public function bairro()
+    {
+        return $this->belongsTo(Bairro::class);
+    }
+
+    public function cidade()
+    {
+        return $this->belongsTo(Cidade::class);
+    }
+
+    public function uf()
+    {
+        return $this->hasOneThrough(
+            Uf::class,
+            Cidade::class,
+            'id',
+            'id',
+            'cidade_id',
+            'uf_id'
+        );
     }
 }
 
