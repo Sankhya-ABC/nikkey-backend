@@ -20,14 +20,19 @@ return new class extends Migration
             $table->date('validade_certificado')->nullable();
             $table->string('tipo_atividade')->nullable();
             $table->boolean('tem_contrato')->default(false);
+            $table->foreignId('endereco_id')
+                ->nullable()
+                ->constrained('enderecos');
 
-            // Endereço
-            $table->string('logradouro')->nullable();
+            $table->foreignId('bairro_id')
+                ->nullable()
+                ->constrained('bairros');
+
+            $table->foreignId('cidade_id')
+                ->nullable()
+                ->constrained('cidades');
             $table->string('complemento')->nullable();
             $table->string('numero', 20)->nullable();
-            $table->string('bairro')->nullable();
-            $table->string('cidade')->nullable();
-            $table->string('estado', 2)->nullable();
             $table->string('cep', 10)->nullable();
             $table->boolean('ativo')->default(true);
 

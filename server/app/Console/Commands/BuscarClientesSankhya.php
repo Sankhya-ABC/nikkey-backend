@@ -3,36 +3,50 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use App\Services\Sankhya\AuthSankhya;
 use App\Services\Sankhya\SankhyaLoadRecordsService;
 use App\Models\Cliente;
+use App\Models\Uf;
+use App\Models\Cidade;
+use App\Models\Bairro;
+use App\Models\Endereco;
 
 class BuscarClientesSankhya extends Command
 {
     protected $signature = 'sankhya:buscar-clientes';
-    protected $description = 'Busca clientes no Sankhya e atualiza a base local usando fetchAll().';
+    protected $description = 'Busca clientes no Sankhya e sincroniza a base local.';
 
     public function handle(): int
     {
-        $this->info('🚀 Iniciando sincronização de clientes Sankhya...');
+        $this->info('Iniciando sincronização de clientes...');
+
         $inicio = microtime(true);
 
         $token = (new AuthSankhya())->login();
         if (!$token) {
-            $this->error('❌ Falha ao autenticar no Sankhya.');
+            $this->error('Falha ao autenticar no Sankhya.');
             return 1;
         }
 
         $service = new SankhyaLoadRecordsService();
-
         $records = $service->fetchAll(
             token: $token,
             rootEntity: 'Parceiro',
             fields: [
-                ''        => ['CODPARC','NOMEPARC','RAZAOSOCIAL','CODPARCMATRIZ','NUMEND','COMPLEMENTO','CEP','ATIVO'],
-                'Endereco'=> ['NOMEEND'],
-                'Bairro'  => ['NOMEBAI'],
-                'Cidade'  => ['NOMECID'],
+                '' => [
+                    'CODPARC',
+                    'NOMEPARC',
+                    'RAZAOSOCIAL',
+                    'CODPARCMATRIZ',
+                    'NUMEND',
+                    'COMPLEMENTO',
+                    'CEP',
+                    'ATIVO'
+                ],
+                'Endereco' => ['NOMEEND'],
+                'Bairro'   => ['NOMEBAI'],
+                'Cidade'   => ['NOMECID'],
                 'Cidade.UnidadeFederativa' => ['UF']
             ],
             criteria: [
@@ -41,55 +55,189 @@ class BuscarClientesSankhya extends Command
         );
 
         if (empty($records)) {
-            $this->info('⚠️ Nenhum cliente encontrado.');
+            $this->info('Nenhum cliente encontrado.');
             return 0;
         }
 
-        $clean = function ($value) {
-            if (!is_string($value)) {
-                return $value; 
+        $now    = now();
+        $buffer = [];
+
+        // 🔹 Cache em memória
+        $ufs       = Uf::pluck('id', 'sigla')->toArray();
+        $cidades   = Cidade::all()
+            ->mapWithKeys(fn ($c) => [$c->nome . '|' . $c->uf_id => $c->id])
+            ->toArray();
+        $bairros   = Bairro::pluck('id', 'nome')->toArray();
+        $enderecos = Endereco::pluck('id', 'logradouro')->toArray();
+
+        // 🔹 Normalizador global
+        $val = function (array $cli, string $key, bool $int = false) {
+            if (!isset($cli[$key]['$'])) {
+                return null;
             }
 
-            $value = trim(preg_replace('/\s+/', ' ', $value));
+            $value = trim($cli[$key]['$']);
+            if ($value === '') {
+                return null;
+            }
 
-            return $value === '' ? null : $value;
+            return $int ? (int) $value : $value;
         };
 
-        $clientes = collect($records)->map(function ($cli) use ($clean) {
+        // 🔹 Normalização forte (remove espaços duplicados)
+        $normalize = function (string $value): string {
+            $value = trim($value);
+            $value = preg_replace('/\s+/', ' ', $value);
+            return strtoupper($value);
+        };
 
-            return [
-                'codparc_snk'        => $clean($cli['f0']['$'] ?? null),
-                'nome_fantasia'      => $clean($cli['f1']['$'] ?? null),
-                'razao_social'       => $clean($cli['f2']['$'] ?? null),
-                'codparc_matriz_snk' => $clean($cli['f3']['$'] ?? null),
-                'numero'             => $clean($cli['f4']['$'] ?? null),
-                'complemento'        => $clean($cli['f5']['$'] ?? null),
-                'cep'                => $clean($cli['f6']['$'] ?? null),
-                'ativo'              => isset($cli['f7']['$']) && $cli['f7']['$'] === 'S' ? 1 : 0,
-                'logradouro'         => $clean($cli['f8']['$'] ?? null),
-                'bairro'             => $clean($cli['f9']['$'] ?? null),
-                'cidade'             => $clean($cli['f10']['$'] ?? null),
-                'estado'             => $clean($cli['f11']['$'] ?? null),
-                'created_at'         => now(),
-                'updated_at'         => now(),
-            ];
-        })->filter(fn($c) => !empty($c['codparc_snk']));
+        DB::transaction(function () use (
+            $records,
+            $now,
+            &$buffer,
+            &$ufs,
+            &$cidades,
+            &$bairros,
+            &$enderecos,
+            $val,
+            $normalize
+        ) {
 
-        $total = $clientes->count();
+            foreach ($records as $cli) {
 
-        if ($total > 0) {
-            $clientes->chunk(500)->each(function ($chunk) {
+                // 📍 Dados normalizados
+                $ufSigla    = $val($cli, 'f11');
+                $cidadeNom  = $val($cli, 'f10');
+                $bairroNom  = $val($cli, 'f9');
+                $logradouro = $val($cli, 'f8');
+
+                if ($ufSigla)    $ufSigla    = $normalize($ufSigla);
+                if ($cidadeNom)  $cidadeNom  = $normalize($cidadeNom);
+                if ($bairroNom)  $bairroNom  = $normalize($bairroNom);
+                if ($logradouro) $logradouro = $normalize($logradouro);
+
+                /** UF */
+                $ufId = null;
+                if ($ufSigla) {
+                    if (!isset($ufs[$ufSigla])) {
+                        $uf = Uf::firstOrCreate(
+                            ['sigla' => $ufSigla],
+                            ['nome' => $ufSigla]
+                        );
+                        $ufs[$ufSigla] = $uf->id;
+                    }
+                    $ufId = $ufs[$ufSigla];
+                }
+
+                /** Cidade (UF pertence à cidade) */
+                $cidadeId = null;
+                if ($cidadeNom && $ufId) {
+                    $key = $cidadeNom . '|' . $ufId;
+
+                    if (!isset($cidades[$key])) {
+                        $cidade = Cidade::firstOrCreate(
+                            [
+                                'nome'  => $cidadeNom,
+                                'uf_id' => $ufId
+                            ]
+                        );
+                        $cidades[$key] = $cidade->id;
+                    }
+
+                    $cidadeId = $cidades[$key];
+                }
+
+                /** Bairro (independente de cidade) */
+                $bairroId = null;
+                if ($bairroNom) {
+                    if (!isset($bairros[$bairroNom])) {
+                        $bairro = Bairro::firstOrCreate(
+                            ['nome' => $bairroNom]
+                        );
+                        $bairros[$bairroNom] = $bairro->id;
+                    }
+                    $bairroId = $bairros[$bairroNom];
+                }
+
+                /** Endereço */
+                $enderecoId = null;
+                if ($logradouro) {
+                    if (!isset($enderecos[$logradouro])) {
+                        $endereco = Endereco::firstOrCreate(
+                            ['logradouro' => $logradouro]
+                        );
+                        $enderecos[$logradouro] = $endereco->id;
+                    }
+                    $enderecoId = $enderecos[$logradouro];
+                }
+
+                /** Cliente */
+                $buffer[] = [
+                    'codparc_snk'        => $val($cli, 'f0', true),
+                    'nome_fantasia'      => $val($cli, 'f1'),
+                    'razao_social'       => $val($cli, 'f2'),
+                    'codparc_matriz_snk' => $val($cli, 'f3', true),
+                    'numero'             => $val($cli, 'f4'),
+                    'complemento'        => $val($cli, 'f5'),
+                    'cep'                => $val($cli, 'f6'),
+                    'ativo'              => ($val($cli, 'f7') === 'S'),
+
+                    'endereco_id' => $enderecoId,
+                    'bairro_id'   => $bairroId,
+                    'cidade_id'   => $cidadeId,
+
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ];
+
+                // 🔹 Flush em lote
+                if (count($buffer) === 500) {
+                    Cliente::upsert(
+                        $buffer,
+                        ['codparc_snk'],
+                        [
+                            'nome_fantasia',
+                            'razao_social',
+                            'endereco_id',
+                            'bairro_id',
+                            'cidade_id',
+                            'numero',
+                            'complemento',
+                            'cep',
+                            'ativo',
+                            'updated_at'
+                        ]
+                    );
+                    $buffer = [];
+                }
+            }
+
+            // 🔹 Último flush
+            if (!empty($buffer)) {
                 Cliente::upsert(
-                    $chunk->toArray(),
-                    ['codparc_snk'], 
-                    ['nome_fantasia','logradouro','bairro','cidade','estado','numero','cep','updated_at']
+                    $buffer,
+                    ['codparc_snk'],
+                    [
+                        'nome_fantasia',
+                        'razao_social',
+                        'endereco_id',
+                        'bairro_id',
+                        'cidade_id',
+                        'numero',
+                        'complemento',
+                        'cep',
+                        'ativo',
+                        'updated_at'
+                    ]
                 );
-            });
-        }
+            }
+        });
 
         $duracao = round(microtime(true) - $inicio, 2);
-        $this->info("🎯 Concluído! Total sincronizado: {$total} clientes em {$duracao}s.");
+        $this->info("Clientes sincronizados com sucesso em {$duracao}s.");
 
         return 0;
     }
+
+
 }
