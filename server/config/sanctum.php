@@ -10,7 +10,7 @@ return [
 
     'guard' => ['web'],
 
-    'expiration' => 100, 
+    'expiration' => 120, 
 
     'middleware' => [
         'verify_csrf_token' => App\Http\Middleware\VerifyCsrfToken::class,

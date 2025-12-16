@@ -7,50 +7,110 @@ use Illuminate\Http\Request;
 
 class ClienteController extends Controller
 {
-    /**
-     * Lista todos os clientes com estrutura organizada.
-     */
-    public function index()
-    {
-        // Busca os clientes com seus usuários vinculados
-        $clientes = Cliente::with('usuarios')->get();
 
-        // Mapeia para o formato desejado
-        $dados = $clientes->map(function ($cliente) {
+    public function index(Request $request)
+    {
+        $perPage = (int) $request->query('per_page', 15);
+        $page = (int) $request->query('page', 1);
+
+        $clientes = Cliente::with(['usuarios.tipoUsuario', 'usuarios.departamento'])
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $clientesFormatados = $clientes->getCollection()->map(function ($cliente) {
+            $user = $cliente->usuarios->first();
+
             return [
                 'id' => $cliente->id,
                 'razaoSocial' => $cliente->razao_social,
                 'nomeFantasia' => $cliente->nome_fantasia,
                 'cnpjCpf' => $cliente->cnpj_cpf,
-                'validadeCertificadoDias' => $cliente->validade_certificado,
-                'idTipoAtividade' => $cliente->tipo_atividade,
-                'endereco' => [
-                    'logradouro' => $cliente->logradouro,
-                    'numero' => $cliente->numero,
-                    'complemento' => $cliente->complemento,
-                    'bairro' => $cliente->bairro,
-                    'estado' => $cliente->estado,
-                    'cidade' => $cliente->cidade,
-                    'cep' => $cliente->cep,
-                ],
-                'contato' => [
-                    'telefone' => $cliente->telefone,
-                    'funcao' => $cliente->contato, // campo contato na tabela
-                    'fax' => null,
-                    'email' => $cliente->email,
-                ],
-                'observacoes' => $cliente->observacoes ?? null,
-                'usuario' => $cliente->usuarios->map(function ($usuario) {
-                    return [
-                        'nome' => $usuario->name ?? '',
-                        'email' => $usuario->email ?? '',
-                        'departamento' => $usuario->departamento ?? '',
-                        'senha' => $usuario->senha ?? '',
-                    ];
-                }),
+                'validadeCertificado' => $cliente->validade_certificado 
+                    ? $cliente->validade_certificado->timestamp 
+                    : "",
+                'tipoAtividade' => $cliente->tipo_atividade,
+                'possuiContrato' => (bool) $cliente->tem_contrato,
+                'logradouro' => $cliente->logradouro,
+                'numero' => $cliente->numero ?? "",
+                'complemento' => $cliente->complemento ?? "",
+                'bairro' => $cliente->bairro,
+                'estado' => $cliente->estado ?? "",
+                'cidade' => $cliente->cidade,
+                'cep' => $cliente->cep,
+                'contato' => $cliente->contato ?? "",
+                'telefone' => $cliente->telefone ?? "",
+                'funcao' => '',
+                'fax' => '',
+                'email' => $cliente->email ?? '',
+                'observacoes' => '',
+
+                'nomeAcesso' => $user ? $user->name : "",
+                'emailAcesso' => $user ? $user->email : "",
+                'departamento' => $user && $user->departamento ? $user->departamento->descricao : "",
+
+                'senha' => "",
+                'confirmarSenha' => "",
+
+                'ativo' => (bool) $cliente->ativo,
+                'dataCadastro' => $cliente->created_at ?? null,
             ];
         });
 
-        return response()->json($dados);
+        $clientes->setCollection($clientesFormatados); 
+
+        return response()->json([
+            'data' => $clientes->items(),
+            'meta' => [
+                'page' => $page,
+                'current_page' => $clientes->currentPage(),
+                'per_page' => $clientes->perPage(),
+                'total' => $clientes->total(),
+                'last_page' => $clientes->lastPage(),
+            ]
+        ]);
+    }
+
+    public function show($id)
+    {
+        $cliente = Cliente::with(['usuarios.tipoUsuario', 'usuarios.departamento'])
+            ->findOrFail($id);
+
+        $user = $cliente->usuarios->first();
+
+        $result = [
+            'id' => $cliente->id,
+            'razaoSocial' => $cliente->razao_social,
+            'nomeFantasia' => $cliente->nome_fantasia,
+            'cnpjCpf' => $cliente->cnpj_cpf,
+            'validadeCertificado' => $cliente->validade_certificado 
+                ? $cliente->validade_certificado->timestamp 
+                : "",
+            'tipoAtividade' => $cliente->tipo_atividade,
+            'possuiContrato' => (bool) $cliente->tem_contrato,
+            'logradouro' => $cliente->logradouro,
+            'numero' => $cliente->numero ?? "",
+            'complemento' => $cliente->complemento ?? "",
+            'bairro' => $cliente->bairro,
+            'estado' => $cliente->estado ?? "",
+            'cidade' => $cliente->cidade,
+            'cep' => $cliente->cep,
+            'contato' => $cliente->contato ?? "",
+            'telefone' => $cliente->telefone ?? "",
+            'funcao' => '',
+            'fax' => '',
+            'email' => $cliente->email ?? '',
+            'observacoes' => '',
+
+            'nomeAcesso' => $user ? $user->name : "",
+            'emailAcesso' => $user ? $user->email : "",
+            'departamento' => $user && $user->departamento ? $user->departamento->descricao : "",
+
+            'senha' => "",
+            'confirmarSenha' => "",
+
+            'ativo' => (bool) $cliente->ativo,
+            'dataCadastro' => $cliente->created_at ?? null,
+        ];
+
+        return response()->json($result);
     }
 }
