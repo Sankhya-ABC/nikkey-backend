@@ -24,30 +24,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | CLIENTES
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/clientes', [ClienteController::class, 'index']);      // LISTAR
-    Route::get('/clientes/{id}', [ClienteController::class, 'show']);   // DETALHE
-    Route::post('/clientes', [ClienteController::class, 'store']);      // CRIAR
-    Route::put('/clientes/{id}', [ClienteController::class, 'update']); // ATUALIZAR
-    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']); // EXCLUIR
+    Route::get('/clientes', [ClienteController::class, 'index']);
+    Route::get('/clientes/{id}', [ClienteController::class, 'show']);
+    Route::post('/clientes', [ClienteController::class, 'store']);
+    Route::put('/clientes/{id}', [ClienteController::class, 'update']);
+    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | USUÁRIOS
-    |--------------------------------------------------------------------------
-    */
     Route::get('/usuarios', [UsuarioController::class, 'index']);
     Route::get('/usuarios/{id}', [UsuarioController::class, 'show']);
+    Route::post('/usuarios', [UsuarioController::class, 'store']);
+    Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
+    Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);
+    Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOCALIZAÇÃO
-    |--------------------------------------------------------------------------
-    */
     Route::get('/ufs', [UfController::class, 'index']);
     Route::get('/ufs/{id}', [UfController::class, 'show']);
 
