@@ -17,7 +17,6 @@ class UsuarioController extends Controller
 
         $query = User::with(['departamento', 'tipoUsuario']);
 
-        // 🔍 APLICA SEARCH
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
