@@ -63,14 +63,24 @@ class UsuarioController extends Controller
         $request->validate([
             'nome' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'perfil' => 'required|integer',
+            'perfil' => 'required',
             'senha' => 'required|min:6|same:confirmarSenha',
         ]);
 
         $user = new User();
         $user->name = $request->nome;
         $user->email = $request->email;
-        $user->tipo_usuario_id = $request->perfil;
+        $tipoUsuarioId = is_numeric($request->perfil)
+            ? $request->perfil
+            : TipoUsuario::where('descricao', $request->perfil)->value('id');
+
+        if (!$tipoUsuarioId) {
+            return response()->json([
+                'message' => 'Perfil inválido'
+            ], 422);
+        }
+
+        $user->tipo_usuario_id = $tipoUsuarioId;
         $user->telefone = $request->telefone;
         $user->departamento_id = $request->departamento_id ?? null;
         $user->ativo = $request->ativo ?? true;
@@ -87,13 +97,22 @@ class UsuarioController extends Controller
         $request->validate([
             'nome' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'perfil' => 'required|integer',
+            'perfil' => 'required',
             'senha' => 'nullable|min:6|same:confirmarSenha',
         ]);
 
         $user->name = $request->nome;
         $user->email = $request->email;
-        $user->tipo_usuario_id = $request->perfil;
+        $tipoUsuarioId = is_numeric($request->perfil)
+            ? $request->perfil
+            : TipoUsuario::where('descricao', $request->perfil)->value('id');
+
+        if (!$tipoUsuarioId) {
+            return response()->json([
+                'message' => 'Perfil inválido'
+            ], 422);
+        }
+        $user->tipo_usuario_id = $tipoUsuarioId;
         $user->telefone = $request->telefone;
         $user->departamento_id = $request->departamento_id ?? null;
         $user->ativo = $request->ativo ?? $user->ativo;
@@ -119,6 +138,7 @@ class UsuarioController extends Controller
     {
         return [
             'id' => $u->id,
+            'idCliente' => $u->cliente_id,
             'nome' => $u->name,
             'email' => $u->email,
             'departamento' => $u->departamento->nome ?? '',
