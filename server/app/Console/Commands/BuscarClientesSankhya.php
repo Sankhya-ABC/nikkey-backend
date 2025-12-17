@@ -34,21 +34,22 @@ class BuscarClientesSankhya extends Command
             token: $token,
             rootEntity: 'Parceiro',
             fields: [
-                '' => [
-                    'CODPARC',
-                    'NOMEPARC',
-                    'RAZAOSOCIAL',
-                    'CODPARCMATRIZ',
-                    'NUMEND',
-                    'COMPLEMENTO',
-                    'CEP',
-                    'ATIVO'
-                ],
-                'Endereco' => ['NOMEEND'],
-                'Bairro'   => ['NOMEBAI'],
-                'Cidade'   => ['NOMECID'],
-                'Cidade.UnidadeFederativa' => ['UF']
+            '' => [
+                'CODPARC',
+                'NOMEPARC',
+                'RAZAOSOCIAL',
+                'CODPARCMATRIZ',
+                'CGC_CPF',  
+                'NUMEND',
+                'COMPLEMENTO',
+                'CEP',
+                'ATIVO'
             ],
+            'Endereco' => ['NOMEEND'],
+            'Bairro'   => ['NOMEBAI'],
+            'Cidade'   => ['NOMECID'],
+            'Cidade.UnidadeFederativa' => ['UF']
+        ],
             criteria: [
                 ['field' => 'CLIENTE', 'value' => 'S', 'type' => 'S']
             ]
@@ -104,12 +105,10 @@ class BuscarClientesSankhya extends Command
         ) {
 
             foreach ($records as $cli) {
-
-                // 📍 Dados normalizados
-                $ufSigla    = $val($cli, 'f11');
-                $cidadeNom  = $val($cli, 'f10');
-                $bairroNom  = $val($cli, 'f9');
-                $logradouro = $val($cli, 'f8');
+                $logradouro = $val($cli, 'f9');
+                $bairroNom  = $val($cli, 'f10');
+                $cidadeNom  = $val($cli, 'f11');
+                $ufSigla    = $val($cli, 'f12');
 
                 if ($ufSigla)    $ufSigla    = $normalize($ufSigla);
                 if ($cidadeNom)  $cidadeNom  = $normalize($cidadeNom);
@@ -177,10 +176,14 @@ class BuscarClientesSankhya extends Command
                     'nome_fantasia'      => $val($cli, 'f1'),
                     'razao_social'       => $val($cli, 'f2'),
                     'codparc_matriz_snk' => $val($cli, 'f3', true),
-                    'numero'             => $val($cli, 'f4'),
-                    'complemento'        => $val($cli, 'f5'),
-                    'cep'                => $val($cli, 'f6'),
-                    'ativo'              => ($val($cli, 'f7') === 'S'),
+
+                    // ✅ NOVO CAMPO
+                    'cnpj_cpf'           => $val($cli, 'f4'),
+
+                    'numero'             => $val($cli, 'f5'),
+                    'complemento'        => $val($cli, 'f6'),
+                    'cep'                => $val($cli, 'f7'),
+                    'ativo'              => ($val($cli, 'f8') === 'S'),
 
                     'endereco_id' => $enderecoId,
                     'bairro_id'   => $bairroId,
@@ -212,24 +215,24 @@ class BuscarClientesSankhya extends Command
                 }
             }
 
-            // 🔹 Último flush
             if (!empty($buffer)) {
-                Cliente::upsert(
-                    $buffer,
-                    ['codparc_snk'],
-                    [
-                        'nome_fantasia',
-                        'razao_social',
-                        'endereco_id',
-                        'bairro_id',
-                        'cidade_id',
-                        'numero',
-                        'complemento',
-                        'cep',
-                        'ativo',
-                        'updated_at'
-                    ]
-                );
+               Cliente::upsert(
+                $buffer,
+                ['codparc_snk'],
+                [
+                    'nome_fantasia',
+                    'razao_social',
+                    'cnpj_cpf',        // ✅ NOVO
+                    'endereco_id',
+                    'bairro_id',
+                    'cidade_id',
+                    'numero',
+                    'complemento',
+                    'cep',
+                    'ativo',
+                    'updated_at'
+                ]
+            );
             }
         });
 

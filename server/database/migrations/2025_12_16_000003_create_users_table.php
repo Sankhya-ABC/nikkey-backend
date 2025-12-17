@@ -44,29 +44,30 @@ class CreateUsersTable extends Migration
                 ->onDelete('set null');
         });
 
-        // Usuário master padrão
-        DB::table('users')->insert(    [
-        'name'              => 'Admin Master',
-        'email'             => 'admin@teste.com',
-        'tipo_usuario_id'   => 1,
-        'departamento_id'   => 1,
-        'telefone'          => '11999999999',
-        'ativo'             => true,
-        'password'          => Hash::make('123456'),
-        'created_at'        => now(),
-        'updated_at'        => now()
-    ],
-    [
-        'name'              => 'Common',
-        'email'             => 'common@teste.com',
-        'tipo_usuario_id'   => 2,
-        'departamento_id'   => 1,
-        'telefone'          => '11999999999',
-        'ativo'             => true,
-        'password'          => Hash::make('123456'),
-        'created_at'        => now(),
-        'updated_at'        => now()
-    ]);
+        DB::table('users')->insert([
+            [
+                'name'            => 'Admin Master',
+                'email'           => 'admin@teste.com',
+                'tipo_usuario_id' => 1,
+                'departamento_id' => 1,
+                'telefone'        => '11999999999',
+                'ativo'           => true,
+                'password'        => Hash::make('123456'),
+                'created_at'      => now(),
+                'updated_at'      => now()
+            ],
+            [
+                'name'            => 'Common',
+                'email'           => 'common@teste.com',
+                'tipo_usuario_id' => 2,
+                'departamento_id' => 2,
+                'telefone'        => '11999999999',
+                'ativo'           => true,
+                'password'        => Hash::make('123456'),
+                'created_at'      => now(),
+                'updated_at'      => now()
+            ]
+        ]);
     }
 
     public function down()

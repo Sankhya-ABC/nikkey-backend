@@ -32,14 +32,14 @@ class User extends Authenticatable
         return $this->belongsTo(Cliente::class);
     }
 
-    public function tipoUsuario() 
-    { 
-        return $this->belongsTo(TipoUsuario::class); 
+    public function tipoUsuario()
+    {
+        return $this->belongsTo(TipoUsuario::class, 'tipo_usuario_id');
     }
 
     public function departamento()
-    { 
-        return $this->belongsTo(Departamento::class); 
+    {
+        return $this->belongsTo(Departamento::class, 'departamento_id');
     }
 
 }
