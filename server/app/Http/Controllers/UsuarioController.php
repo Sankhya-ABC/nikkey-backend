@@ -8,131 +8,126 @@ use Illuminate\Support\Facades\Hash;
 
 class UsuarioController extends Controller
 {
-    public function index()
-    {
-        $usuarios = User::with(['departamento', 'tipoUsuario'])
-            ->get()
-            ->map(function ($u) {
-                return [
-                    'id'            => $u->id,
-                    'nome'          => $u->name,
-                    'email'         => $u->email,
-                    'departamento'  => $u->departamento->nome ?? '',
-                    'tipo'          => $u->tipoUsuario->descricao ?? '',
-                    'telefone'      => $u->telefone ?? '',
-                    'ativo'         => (bool) $u->ativo,
-                    'dataCadastro'  => $u->created_at?->format('Y-m-d H:i:s'),
-                    'senha'         => '',
-                    'confirmarSenha'=> '',
-                ];
-            });
 
-        return response()->json($usuarios);
+    public function index(Request $request)
+    {
+        $perPage = (int) $request->query('per_page', 15);
+        $page    = (int) $request->query('page', 1);
+        $search  = trim($request->query('search'));
+
+        $query = User::with(['departamento', 'tipoUsuario']);
+
+        // 🔍 APLICA SEARCH
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                ->orWhere('email', 'LIKE', "%{$search}%")
+                ->orWhereHas('departamento', function ($d) use ($search) {
+                    $d->where('nome', 'LIKE', "%{$search}%");
+                })
+                ->orWhereHas('tipoUsuario', function ($t) use ($search) {
+                    $t->where('descricao', 'LIKE', "%{$search}%");
+                });
+            });
+        }
+
+        $usuarios = $query->paginate($perPage, ['*'], 'page', $page);
+
+        $usuariosFormatados = $usuarios->getCollection()->map(function (User $u) {
+            return $this->toVO($u);
+        });
+
+        $usuarios->setCollection($usuariosFormatados);
+
+        return response()->json([
+            'data' => $usuarios->items(),
+            'meta' => [
+                'current_page' => $usuarios->currentPage(),
+                'per_page'     => $usuarios->perPage(),
+                'total'        => $usuarios->total(),
+                'last_page'    => $usuarios->lastPage(),
+            ]
+        ]);
     }
 
     public function show($id)
     {
-        $u = User::with(['departamento', 'tipoUsuario'])
+        $usuario = User::with(['departamento', 'tipoUsuario'])
             ->findOrFail($id);
 
-        return response()->json([
-            'id'            => $u->id,
-            'nome'          => $u->name,
-            'email'         => $u->email,
-            'departamento'  => $u->departamento->nome ?? '',
-            'tipo'          => $u->tipoUsuario->descricao ?? '',
-            'telefone'      => $u->telefone ?? '',
-            'ativo'         => (bool) $u->ativo,
-            'dataCadastro'  => $u->created_at?->format('Y-m-d H:i:s'),
-            'senha'         => '',
-            'confirmarSenha'=> '',
-        ]);
+        return response()->json($this->toVO($usuario));
     }
 
     public function store(Request $request)
     {
-        $dados = $request->validate([
-            'nome'              => 'required|string|max:255',
-            'email'             => 'required|email|unique:users,email',
-            'senha'             => 'required|string|min:6|confirmed',
-            'telefone'          => 'nullable|string|max:20',
-            'ativo'             => 'boolean',
-            'departamento_id'   => 'nullable|exists:departamentos,id',
-            'tipo_usuario_id'   => 'nullable|exists:tipos_usuarios,id',
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'perfil' => 'required|integer',
+            'senha' => 'required|min:6|same:confirmarSenha',
         ]);
 
-        $usuario = User::create([
-            'name'              => $dados['nome'],
-            'email'             => $dados['email'],
-            'password'          => Hash::make($dados['senha']),
-            'telefone'          => $dados['telefone'] ?? null,
-            'ativo'             => $dados['ativo'] ?? true,
-            'departamento_id'   => $dados['departamento_id'] ?? null,
-            'tipo_usuario_id'   => $dados['tipo_usuario_id'] ?? null,
-        ]);
+        $user = new User();
+        $user->name = $request->nome;
+        $user->email = $request->email;
+        $user->tipo_usuario_id = $request->perfil;
+        $user->telefone = $request->telefone;
+        $user->departamento_id = $request->departamento_id ?? null;
+        $user->ativo = $request->ativo ?? true;
+        $user->password = Hash::make($request->senha);
+        $user->save();
 
-        return response()->json([
-            'message' => 'Usuário criado com sucesso',
-            'id'      => $usuario->id
-        ], 201);
+        return response()->json($this->toVO($user), 201);
     }
 
     public function update(Request $request, $id)
     {
-        $usuario = User::findOrFail($id);
+        $user = User::findOrFail($id);
 
-        $dados = $request->validate([
-            'nome'              => 'sometimes|required|string|max:255',
-            'email'             => 'sometimes|required|email|unique:users,email,' . $usuario->id,
-            'senha'             => 'nullable|string|min:6|confirmed',
-            'telefone'          => 'nullable|string|max:20',
-            'ativo'             => 'boolean',
-            'departamento_id'   => 'nullable|exists:departamentos,id',
-            'tipo_usuario_id'   => 'nullable|exists:tipos_usuarios,id',
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'perfil' => 'required|integer',
+            'senha' => 'nullable|min:6|same:confirmarSenha',
         ]);
 
-        if (isset($dados['nome'])) {
-            $usuario->name = $dados['nome'];
+        $user->name = $request->nome;
+        $user->email = $request->email;
+        $user->tipo_usuario_id = $request->perfil;
+        $user->telefone = $request->telefone;
+        $user->departamento_id = $request->departamento_id ?? null;
+        $user->ativo = $request->ativo ?? $user->ativo;
+
+        if (!empty($request->senha)) {
+            $user->password = Hash::make($request->senha);
         }
 
-        if (isset($dados['email'])) {
-            $usuario->email = $dados['email'];
-        }
+        $user->save();
 
-        if (!empty($dados['senha'])) {
-            $usuario->password = Hash::make($dados['senha']);
-        }
-
-        if (array_key_exists('telefone', $dados)) {
-            $usuario->telefone = $dados['telefone'];
-        }
-
-        if (array_key_exists('ativo', $dados)) {
-            $usuario->ativo = $dados['ativo'];
-        }
-
-        if (array_key_exists('departamento_id', $dados)) {
-            $usuario->departamento_id = $dados['departamento_id'];
-        }
-
-        if (array_key_exists('tipo_usuario_id', $dados)) {
-            $usuario->tipo_usuario_id = $dados['tipo_usuario_id'];
-        }
-
-        $usuario->save();
-
-        return response()->json([
-            'message' => 'Usuário atualizado com sucesso'
-        ]);
+        return response()->json($this->toVO($user));
     }
 
     public function destroy($id)
     {
-        $usuario = User::findOrFail($id);
-        $usuario->delete();
+        $user = User::findOrFail($id);
+        $user->delete();
 
-        return response()->json([
-            'message' => 'Usuário removido com sucesso'
-        ]);
+        return response()->json(['message' => 'Usuário removido com sucesso']);
+    }
+
+    private function toVO(User $u): array
+    {
+        return [
+            'id' => $u->id,
+            'nome' => $u->name,
+            'email' => $u->email,
+            'departamento' => $u->departamento->nome ?? '',
+            'perfil' => $u->tipoUsuario->descricao ?? '',
+            'telefone' => $u->telefone ?? '',
+            'senha' => '',
+            'confirmarSenha' => '',
+            'ativo' => (bool) $u->ativo,
+            'dataCadastro' => $u->created_at
+        ];
     }
 }
