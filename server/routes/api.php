@@ -32,8 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/clientes/{id}', [ClienteController::class, 'update']);
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']);
 
-    Route::get('/departamentos', [DepartamentoController::class, 'index']);
     Route::get('/departamentos/select', [DepartamentoController::class, 'listSelect']);
+    Route::get('/departamentos', [DepartamentoController::class, 'index']);
     Route::get('/departamentos/{id}', [DepartamentoController::class, 'show']);
     Route::post('/departamentos', [DepartamentoController::class, 'store']);
     Route::put('/departamentos/{id}', [DepartamentoController::class, 'update']);
