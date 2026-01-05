@@ -18,6 +18,7 @@ class SankhyaSyncAll extends Command
         $this->call('sankhya:buscar-pragas');
         $this->call('sankhya:buscar-metodologias');
         $this->call('sankhya:buscar-clientes');
+        
         $this->call('sankhya:buscar-os');
         $this->call('sankhya:buscar-produtos-previstos');
 

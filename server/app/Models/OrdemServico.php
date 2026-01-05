@@ -42,27 +42,14 @@ class OrdemServico extends Model
         'dhprevistafin' => 'datetime'
     ];
 
-    // Cliente
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);
     }
 
-    // Técnico
     public function tecnico()
     {
         return $this->belongsTo(Tecnico::class);
-    }
-
-    // Serviços aplicados
-    public function servicos()
-    {
-        return $this->belongsToMany(
-            Servico::class,
-            'os_servico',
-            'ordem_servico_id',
-            'servico_id'
-        )->withTimestamps();
     }
 
     public function produtosPrevistos()
