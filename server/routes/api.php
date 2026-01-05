@@ -7,6 +7,8 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\UfController;
 use App\Http\Controllers\CidadeController;
 use App\Http\Controllers\BairroController;
+use App\Http\Controllers\DepartamentoController;
+use App\Http\Controllers\OrdemServicoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,12 +32,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/clientes/{id}', [ClienteController::class, 'update']);
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy']);
 
+    Route::get('/departamentos', [DepartamentoController::class, 'index']);
+    Route::get('/departamentos/select', [DepartamentoController::class, 'listSelect']);
+    Route::get('/departamentos/{id}', [DepartamentoController::class, 'show']);
+    Route::post('/departamentos', [DepartamentoController::class, 'store']);
+    Route::put('/departamentos/{id}', [DepartamentoController::class, 'update']);
+    Route::patch('/departamentos/{id}', [DepartamentoController::class, 'update']);
+    Route::delete('/departamentos/{id}', [DepartamentoController::class, 'destroy']);
+
     Route::get('/usuarios', [UsuarioController::class, 'index']);
     Route::get('/usuarios/{id}', [UsuarioController::class, 'show']);
     Route::post('/usuarios', [UsuarioController::class, 'store']);
     Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
+
+    Route::get('/ordens-servico/{idCliente}', [OrdemServicoController::class, 'index']);
+    Route::get('/ordens-servico/{id}', [OrdemServicoController::class, 'show']);
 
     Route::get('/ufs', [UfController::class, 'index']);
     Route::get('/ufs/{id}', [UfController::class, 'show']);

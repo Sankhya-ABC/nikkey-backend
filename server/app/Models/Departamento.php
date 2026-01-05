@@ -10,7 +10,7 @@ class Departamento extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nome'
+        'descricao'
     ];
 
     public function users()
