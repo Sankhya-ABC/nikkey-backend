@@ -15,7 +15,7 @@ services:
     image: nginx:alpine
     container_name: laravel-nginx
     ports:
-      - "61872:61872"
+      - "61872:80"
     volumes:
       - .:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
@@ -23,9 +23,6 @@ services:
       - php-fpm
     networks:
       - laravel-network
-      
-volumes:
-  dbdata:
 
 networks:
   laravel-network:
