@@ -10,15 +10,6 @@ use App\Http\Controllers\BairroController;
 use App\Http\Controllers\DepartamentoController;
 use App\Http\Controllers\OrdemServicoController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-| Rotas públicas e protegidas da API
-|--------------------------------------------------------------------------
-*/
-
-// 🔓 AUTH
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -48,14 +39,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
 
     Route::get('/ordens-servico/{idCliente}', [OrdemServicoController::class, 'index']);
-    Route::get('/ordens-servico/{id}', [OrdemServicoController::class, 'show']);
 
     Route::get('/ufs', [UfController::class, 'index']);
     Route::get('/ufs/{id}', [UfController::class, 'show']);
-
     Route::get('/cidades', [CidadeController::class, 'index']);
     Route::get('/cidades/{id}', [CidadeController::class, 'show']);
-
     Route::get('/bairros', [BairroController::class, 'index']);
     Route::get('/bairros/{id}', [BairroController::class, 'show']);
 });
