@@ -6,22 +6,16 @@ services:
     container_name: laravel-php
     volumes:
       - .:/var/www
-    networks:
-      - laravel-network
+    expose:
+      - "9000"
 
   nginx:
     image: nginx:alpine
     container_name: laravel-nginx
     ports:
-      - "80:80"
+      - "61872:80"
     volumes:
       - .:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - php-fpm
-    networks:
-      - laravel-network
-
-networks:
-  laravel-network:
-    driver: bridge
