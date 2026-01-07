@@ -154,7 +154,7 @@ class UsuarioController extends Controller
 
             'departamento' => [
                 'id' => $u->departamento->id ?? '',
-                'descricao' => $u->departamento->nome ?? '',
+                'descricao' => $u->departamento->descricao ?? '',
             ],
 
             'perfil' => $u->tipoUsuario->descricao ?? null,
