@@ -9,6 +9,7 @@ use App\Http\Controllers\CidadeController;
 use App\Http\Controllers\BairroController;
 use App\Http\Controllers\DepartamentoController;
 use App\Http\Controllers\OrdemServicoController;
+use App\Http\Controllers\RelatorioProdutividadeController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -40,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
 
     Route::get('/ordens-servico', [OrdemServicoController::class, 'index']);
+
+    Route::get('/relatorios/produtividade', [RelatorioProdutividadeController::class, 'index']);
 
     Route::get('/ufs', [UfController::class, 'index']);
     Route::get('/ufs/{id}', [UfController::class, 'show']);
