@@ -39,7 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
 
-    Route::get('/ordens-servico/{idCliente}', [OrdemServicoController::class, 'index']);
+    Route::get('/ordens-servico', [OrdemServicoController::class, 'index']);
 
     Route::get('/ufs', [UfController::class, 'index']);
     Route::get('/ufs/{id}', [UfController::class, 'show']);

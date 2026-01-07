@@ -4,16 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\OrdemServico;
 use Illuminate\Http\Request;
+use App\Policies\VisibilityPolicy;
 
 class OrdemServicoController extends Controller
 {
-    public function index(Request $request, int $idCliente)
+    public function index(Request $request)
     {
         $perPage    = (int) $request->query('per_page', 15);
         $page       = (int) $request->query('page', 1);
         $search     = trim($request->query('search', ''));
         $dataInicio = $request->query('dataInicio');
         $dataFim    = $request->query('dataFim');
+        $idUsuario  = $request->query('idUsuario'); 
 
         if (!$dataInicio || !$dataFim) {
             return response()->json([
@@ -21,10 +23,13 @@ class OrdemServicoController extends Controller
             ], 422);
         }
 
+        $user = $request->user();
+
         $query = OrdemServico::with('tecnico')
-            ->where('cliente_id', $idCliente)
             ->whereDate('hrini', '>=', $dataInicio)
             ->whereDate('hrini', '<=', $dataFim);
+
+        $query = VisibilityPolicy::apply($user, $query, 'cliente_id', $idUsuario);
 
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -38,10 +43,7 @@ class OrdemServicoController extends Controller
         $ordens = $query->orderByDesc('hrini')
                         ->paginate($perPage, ['*'], 'page', $page);
 
-        $ordensFormatadas = $ordens->getCollection()->map(function ($os) {
-            return $this->toVO($os);
-        });
-
+        $ordensFormatadas = $ordens->getCollection()->map(fn($os) => $this->toVO($os));
         $ordens->setCollection($ordensFormatadas);
 
         return response()->json([
@@ -58,12 +60,12 @@ class OrdemServicoController extends Controller
     private function toVO(OrdemServico $os): array
     {
         return [
-            'numOs'        => $os->numos,
-            'status'    => strtoupper($os->statusos ?? ''),
-            'data'      => $os->hrini?->toDateString() ?? null,
-            'horaInicio'=> $os->hrini?->format('H:i') ?? null,
-            'horaFim'   => $os->hrfin?->format('H:i') ?? null,
-            'tecnico'   => [
+            'numOS'      => $os->numos,
+            'status'     => strtoupper($os->statusos ?? ''),
+            'data'       => $os->hrini?->toDateString() ?? null,
+            'horaInicio' => $os->hrini?->format('H:i') ?? null,
+            'horaFim'    => $os->hrfin?->format('H:i') ?? null,
+            'tecnico'    => [
                 'id'   => $os->tecnico?->id ?? "",
                 'nome' => $os->tecnico?->nome ?? "",
             ],
