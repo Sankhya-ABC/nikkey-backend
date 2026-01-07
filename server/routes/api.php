@@ -42,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/ordens-servico', [OrdemServicoController::class, 'index']);
 
-    Route::get('/relatorios/produtividade', [RelatorioProdutividadeController::class, 'index']);
+    Route::get('/relatorios-produtividade', [RelatorioProdutividadeController::class, 'index']);
 
     Route::get('/ufs', [UfController::class, 'index']);
     Route::get('/ufs/{id}', [UfController::class, 'show']);
