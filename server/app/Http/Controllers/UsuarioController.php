@@ -133,6 +133,22 @@ class UsuarioController extends Controller
         return response()->json(['message' => 'Usuário removido com sucesso']);
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'ativo' => 'required|boolean',
+        ]);
+
+        $user = User::findOrFail($id);
+        $user->ativo = $request->ativo;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Status do usuário atualizado com sucesso',
+            'data' => $this->toVO($user),
+        ]);
+    }
+
     private function toVO(User $u): array
     {
         return [
