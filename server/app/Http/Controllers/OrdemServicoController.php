@@ -15,7 +15,7 @@ class OrdemServicoController extends Controller
         $search     = trim($request->query('search', ''));
         $dataInicio = $request->query('dataInicio');
         $dataFim    = $request->query('dataFim');
-        $idCliente  = $request->query('idCliente'); // agora é cliente
+        $idCliente  = $request->query('idCliente'); 
 
         if (!$dataInicio || !$dataFim) {
             return response()->json([
@@ -25,15 +25,12 @@ class OrdemServicoController extends Controller
 
         $user = $request->user();
 
-        // Base query com datas
-        $query = OrdemServico::with('tecnico')
+        $query = OrdemServico::with(['tecnico', 'cliente'])
             ->whereDate('hrini', '>=', $dataInicio)
             ->whereDate('hrini', '<=', $dataFim);
 
-        // Aplica a policy para filtrar clientes
         $query = VisibilityPolicy::apply($user, $query, 'cliente_id', $idCliente);
 
-        // Busca por número da OS ou nome do técnico
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('numos', 'LIKE', "%{$search}%")
@@ -68,9 +65,15 @@ class OrdemServicoController extends Controller
             'data'       => $os->hrini?->toDateString() ?? null,
             'horaInicio' => $os->hrini?->format('H:i') ?? null,
             'horaFim'    => $os->hrfin?->format('H:i') ?? null,
-            'tecnico'    => [
-                'id'   => $os->tecnico?->id ?? "",
-                'nome' => $os->tecnico?->nome ?? "",
+
+            'cliente' => [
+                'id'   => $os->cliente?->id ?? null,
+                'nome' => $os->cliente?->nome ?? '',
+            ],
+
+            'tecnico' => [
+                'id'   => $os->tecnico?->id ?? null,
+                'nome' => $os->tecnico?->nome ?? '',
             ],
         ];
     }
