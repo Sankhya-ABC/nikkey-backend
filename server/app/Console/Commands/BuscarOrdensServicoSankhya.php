@@ -22,7 +22,6 @@ class BuscarOrdensServicoSankhya extends Command
         $inicio = microtime(true);
 
         try {
-            /** Autenticação */
             $token = (new AuthSankhya())->login();
 
             if (!$token) {
@@ -30,11 +29,9 @@ class BuscarOrdensServicoSankhya extends Command
                 return 1;
             }
 
-            /** Service genérica de view */
             $service = new SankhyaLoadViewService();
             $totalProcessadas = 0;
 
-            /** Paginação real via generator */
             foreach ($service->fetchPaginated(
                 token: $token,
                 viewName: 'AD_VGFOSE',
@@ -91,14 +88,10 @@ class BuscarOrdensServicoSankhya extends Command
         return 1;
     }
 
-    /**
-     * Transforma os registros retornados pelo Sankhya
-     */
     private function transformarOrdensServico(array $records): Collection
     {
         return collect($records)->map(function ($os) {
 
-            /** Técnico */
             $tecnico = null;
             $codtec = $this->val($os, 'CODTEC');
             if ($codtec) {
@@ -108,7 +101,6 @@ class BuscarOrdensServicoSankhya extends Command
                 );
             }
 
-            /** Cliente */
             $cliente = null;
             $codparc = $this->val($os, 'CODPARC');
             if ($codparc) {

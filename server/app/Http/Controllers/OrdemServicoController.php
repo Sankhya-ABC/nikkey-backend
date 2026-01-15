@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\OrdemServico;
 use Illuminate\Http\Request;
 use App\Policies\VisibilityPolicy;
+use App\Models\Individuo;
 
 class OrdemServicoController extends Controller
 {
@@ -53,6 +54,72 @@ class OrdemServicoController extends Controller
                 'per_page'     => $ordens->perPage(),
                 'total'        => $ordens->total(),
                 'last_page'    => $ordens->lastPage(),
+            ]
+        ]);
+    }
+
+    public function show(int $id)
+    {
+        $os = OrdemServico::with([
+            'evidenciasPragas.individuo:id,codigo',
+            'evidenciasPragas.ambiente:id,setor',
+            'evidenciasPragas.praga:id,nome_praga',
+        ])->findOrFail($id);
+
+        /**
+         * 1️⃣ Pragas encontradas (simples)
+         */
+        $pragas = $os->evidenciasPragas->map(fn ($e) => [
+            'idPraga' => $e->praga_id ?? '',
+            'comoEncontrado' => $e->individuo?->codigo ?? '',
+            'ondeEncontrado' => $e->ambiente?->setor
+                ?? $e->setor
+                ?? '',
+            'quantidade' => $e->quantidade ?? '',
+        ]);
+
+        /**
+         * 2️⃣ Identificações únicas (V, M, F)
+         */
+        $identificacoes = $os->evidenciasPragas
+            ->pluck('individuo.codigo')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        /**
+         * 3️⃣ Contagem dinâmica por espécie (PRAGA)
+         */
+        $especies = $os->evidenciasPragas
+            ->groupBy('praga_id')
+            ->map(function ($evidencias, $pragaId) use ($identificacoes) {
+
+                $praga = $evidencias->first()->praga;
+
+                $quantidades = collect($identificacoes)->map(function ($codigo) use ($evidencias) {
+                    return $evidencias
+                        ->where('individuo.codigo', $codigo)
+                        ->sum('quantidade');
+                })->toArray();
+
+                return [
+                    'idPraga' => $pragaId,
+                    'nome' => $praga?->nome ?? 'Não identificado',
+                    'quantidades' => $quantidades,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'pragas' => $pragas,
+
+            'contagemInsetos' => [
+                'tipoContagem' => 'ESPECIE',
+                'dados' => [
+                    'identificacao' => $identificacoes,
+                    'especies' => $especies,
+                ]
             ]
         ]);
     }

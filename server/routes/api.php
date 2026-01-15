@@ -41,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
 
     Route::get('/ordens-servico', [OrdemServicoController::class, 'index']);
+    Route::get('/ordens-servico/{id}', [OrdemServicoController::class, 'show']);
 
     Route::get('/relatorios-produtividade', [RelatorioProdutividadeController::class, 'index']);
 

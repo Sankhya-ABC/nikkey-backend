@@ -18,19 +18,14 @@ class Servico extends Model
         )->withTimestamps();
     }
 
-    public function pragas()
-    {
-        return $this->belongsToMany(
-            Praga::class,
-            'os_servico_pragas',
-            'os_servico_servico_id',
-            'praga_id'
-        )->withTimestamps();
-    }
-
     public function produtosPrevistos()
     {
         return $this->hasMany(ProdutoPrevisto::class);
+    }
+
+    public function produtosUtilizados()
+    {
+        return $this->hasMany(ProdutosUtilizados::class);
     }
 }
 

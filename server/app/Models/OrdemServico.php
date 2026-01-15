@@ -52,8 +52,28 @@ class OrdemServico extends Model
         return $this->belongsTo(Tecnico::class);
     }
 
+    public function previsoesExecucao()
+    {
+        return $this->hasMany(PrevisaoExecucaoOs::class);
+    }
+
     public function produtosPrevistos()
     {
         return $this->hasMany(ProdutoPrevisto::class);
+    }
+
+    public function produtosUtilizados()
+    {
+        return $this->hasMany(ProdutosUtilizados::class);
+    }
+
+    public function ambientes()
+    {
+        return $this->hasMany(OrdemServicoAmbiente::class);
+    }
+
+    public function evidenciasPragas()
+    {
+        return $this->hasMany(EvidenciaPraga::class);
     }
 }

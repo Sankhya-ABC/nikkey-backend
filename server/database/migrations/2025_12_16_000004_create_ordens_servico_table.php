@@ -32,7 +32,7 @@ return new class extends Migration
             $table->dateTime('dhprevista')->nullable();
             $table->dateTime('dhprevistafin')->nullable();
             $table->string('duracao')->nullable();
-            $table->string('servico')->nullable();
+            $table->text('servico')->nullable();
             $table->unsignedBigInteger('codvei')->nullable();   
             $table->boolean('confage')->default(false)->nullable();
             $table->string('idcliente')->nullable();

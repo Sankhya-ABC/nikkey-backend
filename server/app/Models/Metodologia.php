@@ -29,4 +29,9 @@ class Metodologia extends Model
     {
         return $this->hasMany(ProdutoPrevisto::class);
     }
+
+    public function produtosUtilizados()
+    {
+        return $this->hasMany(ProdutosUtilizados::class);
+    }
 }

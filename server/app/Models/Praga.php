@@ -13,18 +13,13 @@ class Praga extends Model
         return $this->belongsTo(GrupoPraga::class, 'grupo_praga_id');
     }
 
-    public function servicos()
-    {
-        return $this->belongsToMany(
-            Servico::class,
-            'os_servico_pragas',
-            'praga_id',
-            'os_servico_servico_id'
-        )->withTimestamps();
-    }
-
     public function produtosPrevistos()
     {
         return $this->hasMany(ProdutoPrevisto::class);
+    }
+
+    public function produtosUtilizados()
+    {
+        return $this->hasMany(ProdutosUtilizados::class);
     }
 }
