@@ -116,9 +116,11 @@ class DashboardController extends Controller {
 
     public function getOrdensServico(Request $request)
     {
+        // authentication
         $token = $this->autenticarSankhya();
         $periodo = $this->parsePeriodo($request);
 
+        // service
         $service = new SankhyaLoadRecordsService();
 
         $records = $service->fetchAll(
@@ -129,17 +131,20 @@ class DashboardController extends Controller {
             ]
         );
 
+        // mapping
         $records = array_map(
             fn ($item) => $this->mapGetOrdensServico($item),
             $records
         );
 
+        // filter by date
         $records = $this->filtrarPorPeriodo(
             $records,
             $periodo['inicio'],
             $periodo['fim']
         );
 
+        // group
         $grouped = [];
         foreach ($records as $item) {
             $dataKey = Carbon::createFromFormat(
@@ -151,6 +156,7 @@ class DashboardController extends Controller {
         }
         ksort($grouped);
 
+        // response
         return response()->json(
             array_map(
                 fn ($data, $qntOS) => ['data' => $data, 'qntOS' => $qntOS],
