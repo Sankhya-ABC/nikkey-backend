@@ -12,17 +12,6 @@ class DashboardController extends Controller {
     private function mapGetBasicData(array $item): array
     {
         return [
-            'codigo' => $item['f0']['$'] ?? null,
-            'nome' => trim($item['f1']['$'] ?? ''),
-            'razao_social' => trim($item['f2']['$'] ?? ''),
-            'cpf_cnpj' => $item['f3']['$'] ?? null,
-            'ativo' => ($item['f4']['$'] ?? 'N') === 'S',
-        ];
-    }
-
-    private function mapGetOrdensServico(array $item): array
-    {
-        return [
             'clienteId' => $item['f0']['$'] ?? null,
             'tecnicoId' => $item['f1']['$'] ?? null,
             'dataPrevista' => $item['f2']['$'] ?? null,
@@ -30,46 +19,7 @@ class DashboardController extends Controller {
     }
 
     // endpoints requests
-    public function getBasicData()
-    {
-        $token = (new AuthSankhya())->login();
-
-        if (!$token) {
-            return response()->json([
-                'message' => 'Falha ao autenticar no Sankhya'
-            ], 500);
-        }
-
-        $service = new SankhyaLoadRecordsService();
-
-        $records = $service->fetchAll(
-            token: $token,
-            rootEntity: 'Parceiro',
-            fields: [
-                '' => [
-                    'CODPARC',
-                    'NOMEPARC',
-                    'RAZAOSOCIAL',
-                    'CGC_CPF',
-                    'ATIVO'
-                ]
-            ],
-            criteria: [
-                ['field' => 'CLIENTE', 'value' => 'S', 'type' => 'S']
-            ]
-        );
-
-        $records = array_map(
-            fn ($item) => $this->mapGetBasicData($item),
-            $records
-        );
-
-        return response()->json([
-            'data' => $records
-        ]);
-    }
-
-    public function getOrdensServico(Request $request)
+    public function getBasicData(Request $request)
     {
         // app auth
         $token = (new AuthSankhya())->login();
@@ -96,7 +46,7 @@ class DashboardController extends Controller {
         );
 
         $records = array_map(
-            fn ($item) => $this->mapGetOrdensServico($item),
+            fn ($item) => $this->mapGetBasicData($item),
             $records
         );
 
@@ -157,6 +107,12 @@ class DashboardController extends Controller {
             'qtdOrdemServico' => $qtdOrdemServico,
             'qtdCliente' => $qtdCliente,
             'qtdTecnico' => $qtdTecnico
+        ]);
+    }
+
+    public function getOrdensServico(){
+        return response()->json([
+            'message' => 'Endpoint getOrdensServico',
         ]);
     }
 
