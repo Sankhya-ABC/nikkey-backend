@@ -84,6 +84,23 @@ class DashboardController extends Controller {
         ];
     }
 
+    private function mapGetConsumoProdutosOSAndDate(array $item): array
+    {
+        return [
+            'numOS' => $item['f0']['$'] ?? null,
+            'dataPrevista' => trim($item['f1']['$'] ?? ''),
+        ];
+    }
+    
+    private function mapGetConsumoProdutosOSAndCodProdAndQtd(array $item): array
+    {
+        return [
+            'numOS' => $item['f0']['$'] ?? null,
+            'codProduto' => $item['f1']['$'] ?? null,
+            'qnt' => (float) ($item['f2']['$'] ?? 0),
+        ];
+    }
+
     // endpoints requests
     public function getBasicData(Request $request)
     {
@@ -230,10 +247,75 @@ class DashboardController extends Controller {
         return response()->json(array_values($grouped));
     }
 
-    public function getConsumoProdutos(){
-        return response()->json([
-            'message' => 'Endpoint getConsumoProdutos',
-        ]);
+    public function getConsumoProdutos(Request $request)
+    {
+        // authentication
+        $token = $this->autenticarSankhya();
+        $periodo = $this->parsePeriodo($request);
+
+        // service
+        $service = new SankhyaLoadRecordsService();
+
+        $OSAndDate = $service->fetchAll(
+            token: $token,
+            rootEntity: 'AD_VGFOSE',
+            fields: [
+                '' => ['NUMOS', 'DHPREVISTA']
+            ]
+        );
+
+        // mapping
+        $OSAndDate = array_map(
+            fn ($item) => $this->mapGetConsumoProdutosOSAndDate($item),
+            $OSAndDate
+        );
+
+        // filter by date
+        $OSAndDate = $this->filtrarPorPeriodo(
+            $OSAndDate,
+            $periodo['inicio'],
+            $periodo['fim']
+        );
+
+        // get numOS
+        $numerosOS = array_values(
+            array_unique(
+                array_column($OSAndDate, 'numOS')
+            )
+        );
+
+        $OSAndCodProdAndQtd = $service->fetchAll(
+            token: $token,
+            rootEntity: 'AD_VGFOSESERPRGPRD',
+            fields: [
+                '' => ['NUMOS', 'CODPROD', 'QTDNEG']
+            ]
+        );
+
+        // mapping
+        $OSAndCodProdAndQtd = array_map(
+            fn ($item) => $this->mapGetConsumoProdutosOSAndCodProdAndQtd($item),
+            $OSAndCodProdAndQtd
+        );
+
+        // group
+        $consumoPorProduto = [];
+        foreach ($OSAndCodProdAndQtd as $item) {
+            $codProduto = $item['codProduto'];
+
+            if (!isset($consumoPorProduto[$codProduto])) {
+                $consumoPorProduto[$codProduto] = [
+                    'codProduto' => $codProduto,
+                    'qnt' => 0,
+                ];
+            }
+
+            $consumoPorProduto[$codProduto]['qnt'] += $item['qnt'];
+        }
+        $consumoPorProduto = array_values($consumoPorProduto);
+
+
+        return response()->json(array_values($consumoPorProduto));
     }
 
     public function getProximasVisitas(){
