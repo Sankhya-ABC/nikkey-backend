@@ -2,15 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\TipoDashboard;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use App\Services\Sankhya\AuthSankhya;
+use App\Services\Sankhya\SankhyaLoadRecordsService;
 
 class DashboardController extends Controller {
-    public function getBasicData(){
+    public function getBasicData()
+    {
+        $token = (new AuthSankhya())->login();
+
+        if (!$token) {
+            return response()->json([
+                'message' => 'Falha ao autenticar no Sankhya'
+            ], 500);
+        }
+
+        $service = new SankhyaLoadRecordsService();
+
+        $records = $service->fetchAll(
+            token: $token,
+            rootEntity: 'Parceiro',
+            fields: [
+                '' => [
+                    'CODPARC',
+                    'NOMEPARC',
+                    'RAZAOSOCIAL',
+                    'CGC_CPF',
+                    'ATIVO'
+                ]
+            ],
+            criteria: [
+                ['field' => 'CLIENTE', 'value' => 'S', 'type' => 'S']
+            ]
+        );
+
         return response()->json([
-            'message' => 'Endpoint getBasicData',
+            'data' => $records
         ]);
     }
 
