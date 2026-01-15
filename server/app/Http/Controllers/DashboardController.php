@@ -6,6 +6,19 @@ use App\Services\Sankhya\AuthSankhya;
 use App\Services\Sankhya\SankhyaLoadRecordsService;
 
 class DashboardController extends Controller {
+    // mappers
+    private function mapParceiro(array $item): array
+    {
+        return [
+            'codigo' => $item['f0']['$'] ?? null,
+            'nome' => trim($item['f1']['$'] ?? ''),
+            'razao_social' => trim($item['f2']['$'] ?? ''),
+            'cpf_cnpj' => $item['f3']['$'] ?? null,
+            'ativo' => ($item['f4']['$'] ?? 'N') === 'S',
+        ];
+    }
+
+    // endpoints requests
     public function getBasicData()
     {
         $token = (new AuthSankhya())->login();
@@ -33,6 +46,11 @@ class DashboardController extends Controller {
             criteria: [
                 ['field' => 'CLIENTE', 'value' => 'S', 'type' => 'S']
             ]
+        );
+
+        $records = array_map(
+            fn ($item) => $this->mapParceiro($item),
+            $records
         );
 
         return response()->json([
