@@ -8,6 +8,56 @@ use App\Services\Sankhya\AuthSankhya;
 use App\Services\Sankhya\SankhyaLoadRecordsService;
 
 class DashboardController extends Controller {
+    // utils
+    private function autenticarSankhya(): string
+    {
+        $token = (new AuthSankhya())->login();
+
+        if (!$token) {
+            abort(500, 'Falha ao autenticar no Sankhya');
+        }
+
+        return $token;
+    }
+
+    private function parsePeriodo(Request $request): array
+    {
+        return [
+            'inicio' => $request->query('dataInicio')
+                ? Carbon::parse($request->query('dataInicio'))->startOfDay()
+                : null,
+
+            'fim' => $request->query('dataFim')
+                ? Carbon::parse($request->query('dataFim'))->endOfDay()
+                : null
+        ];
+    }
+
+    private function filtrarPorPeriodo(array $records, ?Carbon $inicio, ?Carbon $fim): array
+    {
+        if (!$inicio && !$fim) {
+            return $records;
+        }
+
+        return array_values(array_filter($records, function ($item) use ($inicio, $fim) {
+            if (empty($item['dataPrevista'])) {
+                return false;
+            }
+
+            $data = Carbon::createFromFormat('d/m/Y H:i:s', $item['dataPrevista']);
+
+            if ($inicio && $data->lt($inicio)) {
+                return false;
+            }
+
+            if ($fim && $data->gt($fim)) {
+                return false;
+            }
+
+            return true;
+        }));
+    }
+
     // mappers
     private function mapGetBasicData(array $item): array
     {
@@ -28,178 +78,86 @@ class DashboardController extends Controller {
     // endpoints requests
     public function getBasicData(Request $request)
     {
-        // app auth
-        $token = (new AuthSankhya())->login();
+        // authentication
+        $token = $this->autenticarSankhya();
+        $periodo = $this->parsePeriodo($request);
 
-        if (!$token) {
-            return response()->json([
-                'message' => 'Falha ao autenticar no Sankhya'
-            ], 500);
-        }
-
-        // request
+        // service
         $service = new SankhyaLoadRecordsService();
 
         $records = $service->fetchAll(
             token: $token,
             rootEntity: 'AD_VGFOSE',
             fields: [
-                '' => [
-                    'CODPARC',
-                    'CODTEC',
-                    'DHPREVISTA'
-                ]
+                '' => ['CODPARC', 'CODTEC', 'DHPREVISTA']
             ]
         );
 
+        // mapping
         $records = array_map(
             fn ($item) => $this->mapGetBasicData($item),
             $records
         );
 
-        // handle dates from queryParamRequest
-        $dataInicio = $request->query('dataInicio');
-        $dataFim = $request->query('dataFim');
-        $dataInicio = $dataInicio
-            ? Carbon::parse($dataInicio)->startOfDay()
-            : null;
-        $dataFim = $dataFim
-            ? Carbon::parse($dataFim)->endOfDay()
-            : null;
-
         // filter by date
-        if ($dataInicio || $dataFim) {
-            $records = array_values(array_filter($records, function ($item) use ($dataInicio, $dataFim) {
-                if (empty($item['dataPrevista'])) {
-                    return false;
-                }
+        $records = $this->filtrarPorPeriodo(
+            $records,
+            $periodo['inicio'],
+            $periodo['fim']
+        );
 
-                $dataPrevista = Carbon::createFromFormat(
-                    'd/m/Y H:i:s',
-                    $item['dataPrevista']
-                );
-
-                if ($dataInicio && $dataPrevista->lt($dataInicio)) {
-                    return false;
-                }
-
-                if ($dataFim && $dataPrevista->gt($dataFim)) {
-                    return false;
-                }
-
-                return true;
-            }));
-        }
-
-        // group data
-        $qtdOrdemServico = count($records);
-
-        $clientesUnicos = [];
-        $tecnicosUnicos = [];
-
-        foreach ($records as $item) {
-            if (!empty($item['clienteId'])) {
-                $clientesUnicos[$item['clienteId']] = true;
-            }
-
-            if (!empty($item['tecnicoId'])) {
-                $tecnicosUnicos[$item['tecnicoId']] = true;
-            }
-        }
-
-        $qtdCliente = count($clientesUnicos);
-        $qtdTecnico = count($tecnicosUnicos);
-
+        // response
         return response()->json([
-            'qtdOrdemServico' => $qtdOrdemServico,
-            'qtdCliente' => $qtdCliente,
-            'qtdTecnico' => $qtdTecnico
+            'qtdOrdemServico' => count($records),
+            'qtdCliente' => count(array_unique(array_column($records, 'clienteId'))),
+            'qtdTecnico' => count(array_unique(array_column($records, 'tecnicoId')))
         ]);
     }
 
     public function getOrdensServico(Request $request)
     {
-        // auth
-        $token = (new AuthSankhya())->login();
+        $token = $this->autenticarSankhya();
+        $periodo = $this->parsePeriodo($request);
 
-        if (!$token) {
-            return response()->json([
-                'message' => 'Falha ao autenticar no Sankhya'
-            ], 500);
-        }
-
-        // datas (mock default)
-        $dataInicio = Carbon::parse(
-            $request->query('dataInicio', '2025-10-01')
-        )->startOfDay();
-
-        $dataFim = Carbon::parse(
-            $request->query('dataFim', '2026-01-31')
-        )->endOfDay();
-
-        // request
         $service = new SankhyaLoadRecordsService();
 
         $records = $service->fetchAll(
             token: $token,
             rootEntity: 'AD_VGFOSE',
             fields: [
-                '' => [
-                    'DHPREVISTA'
-                ]
+                '' => ['DHPREVISTA']
             ]
         );
 
-        // mapper
         $records = array_map(
             fn ($item) => $this->mapGetOrdensServico($item),
             $records
         );
 
-        /**
-         * Filtra por período + agrupa por data
-         */
+        $records = $this->filtrarPorPeriodo(
+            $records,
+            $periodo['inicio'],
+            $periodo['fim']
+        );
+
         $grouped = [];
-
         foreach ($records as $item) {
-            if (empty($item['dataPrevista'])) {
-                continue;
-            }
-
-            $data = Carbon::createFromFormat(
+            $dataKey = Carbon::createFromFormat(
                 'd/m/Y H:i:s',
                 $item['dataPrevista']
-            );
+            )->format('Y-m-d');
 
-            // filtro por período
-            if ($data->lt($dataInicio) || $data->gt($dataFim)) {
-                continue;
-            }
-
-            // CAST(date)
-            $dataKey = $data->format('Y-m-d');
-
-            if (!isset($grouped[$dataKey])) {
-                $grouped[$dataKey] = 0;
-            }
-
-            $grouped[$dataKey]++;
+            $grouped[$dataKey] = ($grouped[$dataKey] ?? 0) + 1;
         }
-
-        // ordena por data
         ksort($grouped);
 
-        // formato final
-        $result = [];
-
-        foreach ($grouped as $data => $qtdOS) {
-            $result[] = [
-                'data' => $data,
-                'qntOS' => $qtdOS
-            ];
-        }
-
-        return response()->json($result);
+        return response()->json(
+            array_map(
+                fn ($data, $qntOS) => ['data' => $data, 'qntOS' => $qntOS],
+                array_keys($grouped),
+                $grouped
+            )
+        );
     }
 
     public function getAtendimentosTecnico(){
