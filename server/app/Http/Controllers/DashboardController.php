@@ -7,7 +7,7 @@ use App\Services\Sankhya\SankhyaLoadRecordsService;
 
 class DashboardController extends Controller {
     // mappers
-    private function mapParceiro(array $item): array
+    private function mapGetBasicData(array $item): array
     {
         return [
             'codigo' => $item['f0']['$'] ?? null,
@@ -15,6 +15,15 @@ class DashboardController extends Controller {
             'razao_social' => trim($item['f2']['$'] ?? ''),
             'cpf_cnpj' => $item['f3']['$'] ?? null,
             'ativo' => ($item['f4']['$'] ?? 'N') === 'S',
+        ];
+    }
+
+    private function mapGetOrdensServico(array $item): array
+    {
+        return [
+            'clienteId' => $item['f0']['$'] ?? null,
+            'tecnicoId' => $item['f1']['$'] ?? null,
+            'dataPrevista' => $item['f2']['$'] ?? null,
         ];
     }
 
@@ -49,7 +58,7 @@ class DashboardController extends Controller {
         );
 
         $records = array_map(
-            fn ($item) => $this->mapParceiro($item),
+            fn ($item) => $this->mapGetBasicData($item),
             $records
         );
 
@@ -58,9 +67,37 @@ class DashboardController extends Controller {
         ]);
     }
 
-    public function getOrdensServico(){
+    public function getOrdensServico()
+    {
+        $token = (new AuthSankhya())->login();
+
+        if (!$token) {
+            return response()->json([
+                'message' => 'Falha ao autenticar no Sankhya'
+            ], 500);
+        }
+
+        $service = new SankhyaLoadRecordsService();
+
+        $records = $service->fetchAll(
+            token: $token,
+            rootEntity: 'AD_VGFOSE',
+            fields: [
+                '' => [
+                    'CODPARC',
+                    'CODTEC',
+                    'DHPREVISTA'
+                ]
+            ]
+        );
+
+        $records = array_map(
+            fn ($item) => $this->mapGetOrdensServico($item),
+            $records
+        );
+
         return response()->json([
-            'message' => 'Endpoint getOrdensServico',
+            'data' => $records
         ]);
     }
 
