@@ -62,8 +62,8 @@ class DashboardController extends Controller {
     private function mapGetBasicData(array $item): array
     {
         return [
-            'clienteId' => $item['f0']['$'] ?? null,
-            'tecnicoId' => $item['f1']['$'] ?? null,
+            'idCliente' => $item['f0']['$'] ?? null,
+            'idTecnico' => $item['f1']['$'] ?? null,
             'dataPrevista' => $item['f2']['$'] ?? null,
         ];
     }
@@ -72,6 +72,15 @@ class DashboardController extends Controller {
     {
         return [
             'dataPrevista' => $item['f0']['$'] ?? null,
+        ];
+    }
+
+    private function mapGetAtendimentosTecnico(array $item): array
+    {
+        return [
+            'idTecnico' => $item['f0']['$'] ?? null,
+            'nomeTecnico' => trim($item['f1']['$'] ?? ''),
+            'dataPrevista' => $item['f2']['$'] ?? null,
         ];
     }
 
@@ -109,8 +118,8 @@ class DashboardController extends Controller {
         // response
         return response()->json([
             'qtdOrdemServico' => count($records),
-            'qtdCliente' => count(array_unique(array_column($records, 'clienteId'))),
-            'qtdTecnico' => count(array_unique(array_column($records, 'tecnicoId')))
+            'qtdCliente' => count(array_unique(array_column($records, 'idCliente'))),
+            'qtdTecnico' => count(array_unique(array_column($records, 'idTecnico')))
         ]);
     }
 
@@ -166,10 +175,59 @@ class DashboardController extends Controller {
         );
     }
 
-    public function getAtendimentosTecnico(){
-        return response()->json([
-            'message' => 'Endpoint getAtendimentosTecnico',
-        ]);
+    public function getAtendimentosTecnico(Request $request)
+    {
+        // authentication
+        $token = $this->autenticarSankhya();
+        $periodo = $this->parsePeriodo($request);
+
+        // service
+        $service = new SankhyaLoadRecordsService();
+
+        $records = $service->fetchAll(
+            token: $token,
+            rootEntity: 'AD_VGFOSE',
+            fields: [
+                '' => ['CODTEC', 'NOMETEC', 'DHPREVISTA']
+            ]
+        );
+
+        // mapping
+        $records = array_map(
+            fn ($item) => $this->mapGetAtendimentosTecnico($item),
+            $records
+        );
+
+        // filter by date
+        $records = $this->filtrarPorPeriodo(
+            $records,
+            $periodo['inicio'],
+            $periodo['fim']
+        );
+
+        // group
+        $grouped = [];
+        foreach ($records as $item) {
+            if (empty($item['idTecnico'])) {
+                continue;
+            }
+
+            $key = $item['idTecnico'];
+
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'idTecnico' => $item['idTecnico'],
+                    'nomeTecnico' => $item['nomeTecnico'],
+                    'qtdOrdemServico' => 0
+                ];
+            }
+
+            $grouped[$key]['qtdOrdemServico']++;
+        }
+        usort($grouped, fn ($a, $b) => $b['qtdOrdemServico'] <=> $a['qtdOrdemServico']);
+
+        // response
+        return response()->json(array_values($grouped));
     }
 
     public function getConsumoProdutos(){
