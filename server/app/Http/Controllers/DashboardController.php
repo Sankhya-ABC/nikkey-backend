@@ -18,6 +18,13 @@ class DashboardController extends Controller {
         ];
     }
 
+    private function mapGetOrdensServico(array $item): array
+    {
+        return [
+            'dataPrevista' => $item['f0']['$'] ?? null,
+        ];
+    }
+
     // endpoints requests
     public function getBasicData(Request $request)
     {
@@ -110,10 +117,89 @@ class DashboardController extends Controller {
         ]);
     }
 
-    public function getOrdensServico(){
-        return response()->json([
-            'message' => 'Endpoint getOrdensServico',
-        ]);
+    public function getOrdensServico(Request $request)
+    {
+        // auth
+        $token = (new AuthSankhya())->login();
+
+        if (!$token) {
+            return response()->json([
+                'message' => 'Falha ao autenticar no Sankhya'
+            ], 500);
+        }
+
+        // datas (mock default)
+        $dataInicio = Carbon::parse(
+            $request->query('dataInicio', '2025-10-01')
+        )->startOfDay();
+
+        $dataFim = Carbon::parse(
+            $request->query('dataFim', '2026-01-31')
+        )->endOfDay();
+
+        // request
+        $service = new SankhyaLoadRecordsService();
+
+        $records = $service->fetchAll(
+            token: $token,
+            rootEntity: 'AD_VGFOSE',
+            fields: [
+                '' => [
+                    'DHPREVISTA'
+                ]
+            ]
+        );
+
+        // mapper
+        $records = array_map(
+            fn ($item) => $this->mapGetOrdensServico($item),
+            $records
+        );
+
+        /**
+         * Filtra por período + agrupa por data
+         */
+        $grouped = [];
+
+        foreach ($records as $item) {
+            if (empty($item['dataPrevista'])) {
+                continue;
+            }
+
+            $data = Carbon::createFromFormat(
+                'd/m/Y H:i:s',
+                $item['dataPrevista']
+            );
+
+            // filtro por período
+            if ($data->lt($dataInicio) || $data->gt($dataFim)) {
+                continue;
+            }
+
+            // CAST(date)
+            $dataKey = $data->format('Y-m-d');
+
+            if (!isset($grouped[$dataKey])) {
+                $grouped[$dataKey] = 0;
+            }
+
+            $grouped[$dataKey]++;
+        }
+
+        // ordena por data
+        ksort($grouped);
+
+        // formato final
+        $result = [];
+
+        foreach ($grouped as $data => $qtdOS) {
+            $result[] = [
+                'data' => $data,
+                'qntOS' => $qtdOS
+            ];
+        }
+
+        return response()->json($result);
     }
 
     public function getAtendimentosTecnico(){
