@@ -114,10 +114,10 @@ class DashboardController extends Controller {
         return [
             'numOS' => $item['f0']['$'] ?? null,
             'dataPrevista' => $item['f1']['$'] ?? null,
-            'horaInicio' => $item['f2']['$'] ?? null,
-            'horaFim' => $item['f3']['$'] ?? null,
-            'idCliente' => $item['f4']['$'] ?? null,
-            'nomeCliente' => trim($item['f5']['$'] ?? ''),
+            'horaInicio' => $item['f1']['$'] ?? null,
+            'horaFim' => $item['f2']['$'] ?? null,
+            'idCliente' => $item['f3']['$'] ?? null,
+            'nomeCliente' => trim($item['f4']['$'] ?? ''),
         ];
     }
 
@@ -390,7 +390,6 @@ class DashboardController extends Controller {
                 '' => [
                     'NUMOS',
                     'DHPREVISTA',
-                    'DHPREVISTA',
                     'DHPREVISTAFIN',
                     'CODPARC',
                     'NOMEPARC'
@@ -409,17 +408,27 @@ class DashboardController extends Controller {
             $periodo['fim']
         );
 
-       
-        $hoje = Carbon::today();
-        $records = array_values(array_filter($records, function ($item) use ($hoje) {
+        $records = array_map(function ($item) {
             if (empty($item['dataPrevista'])) {
-                return false;
+                return $item;
             }
 
-            $data = Carbon::createFromFormat('d/m/Y H:i:s', $item['dataPrevista']);
-            return $data->greaterThanOrEqualTo($hoje);
-        }));
+            $inicio = Carbon::createFromFormat('d/m/Y H:i:s', $item['dataPrevista']);
 
-        return response()->json($records);
+            $fim = !empty($item['horaFim'])
+                ? Carbon::createFromFormat('d/m/Y H:i:s', $item['horaFim'])
+                : null;
+
+            return [
+                'numOS' => $item['numOS'],
+                'data' => $inicio->format('d/m/Y'),
+                'horaInicio' => $inicio->format('H:i'),
+                'horaFim' => $fim?->format('H:i'),
+                'idCliente' => $item['idCliente'],
+                'nomeCliente' => $item['nomeCliente'],
+            ];
+        }, $records);
+
+        return response()->json(array_values($records));
     }
 }
