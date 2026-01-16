@@ -101,6 +101,14 @@ class DashboardController extends Controller {
         ];
     }
 
+    private function mapGetConsumoProdutosCodprodAndDescrprod(array $item): array
+    {
+        return [
+            'codProduto' => $item['f0']['$'] ?? null,
+            'descProduto' => $item['f1']['$'] ?? null,
+        ];
+    }
+
     // endpoints requests
     public function getBasicData(Request $request)
     {
@@ -314,8 +322,35 @@ class DashboardController extends Controller {
         }
         $consumoPorProduto = array_values($consumoPorProduto);
 
+        $codigosProduto = array_column($consumoPorProduto, 'codProduto');
 
-        return response()->json(array_values($consumoPorProduto));
+        $CodprodAndDescrprod = $service->fetchAll(
+            token: $token,
+            rootEntity: 'Produto',
+            fields: [
+                '' => ['CODPROD', 'DESCRPROD']
+            ]
+        );
+
+        // mapping
+        $CodprodAndDescrprod = array_map(
+            fn ($item) => $this->mapGetConsumoProdutosCodprodAndDescrprod($item),
+            $CodprodAndDescrprod
+        );
+
+        // link codProduto with descProduto
+        $mapaProdutos = [];
+        foreach ($CodprodAndDescrprod as $produto) {
+            if ($produto['codProduto']) {
+                $mapaProdutos[$produto['codProduto']] = $produto['descProduto'];
+            }
+        }
+        foreach ($consumoPorProduto as &$item) {
+            $item['descProduto'] = $mapaProdutos[$item['codProduto']] ?? null;
+        }
+        unset($item);
+
+        return response()->json($consumoPorProduto);
     }
 
     public function getProximasVisitas(){
