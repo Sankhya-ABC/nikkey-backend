@@ -373,14 +373,17 @@ class DashboardController extends Controller {
         }
         unset($item);
 
+        //response
         return response()->json(array_values($consumoPorProduto));
     }
 
     public function getProximasVisitas(Request $request)
     {
+        // authentication
         $token = $this->autenticarSankhya();
         $periodo = $this->parsePeriodo($request);
 
+        // service
         $service = new SankhyaLoadRecordsService();
 
         $records = $service->fetchAll(
@@ -397,17 +400,20 @@ class DashboardController extends Controller {
             ]
         );
 
+        // mapping
         $records = array_map(
             fn ($item) => $this->mapGetProximasVisitas($item),
             $records
         );
 
+        // filter by date
         $records = $this->filtrarPorPeriodo(
             $records,
             $periodo['inicio'],
             $periodo['fim']
         );
 
+        // filter by today until periodo inicio
         $hoje = Carbon::today();
         $records = array_values(array_filter($records, function ($item) use ($hoje) {
             if (empty($item['dataPrevista'])) {
@@ -434,6 +440,7 @@ class DashboardController extends Controller {
             ];
         }, $records);
 
+        // sort
         usort($records, function ($a, $b) {
             return strcmp(
                 $a['data'] . ' ' . $a['horaInicio'],
@@ -441,6 +448,7 @@ class DashboardController extends Controller {
             );
         });
 
+        // response
         return response()->json($records);
     }
 }
