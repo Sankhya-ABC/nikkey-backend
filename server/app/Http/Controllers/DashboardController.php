@@ -292,6 +292,10 @@ class DashboardController extends Controller {
             )
         );
 
+        if (empty($numerosOS)) {
+            return response()->json([]);
+        }
+     
         $OSAndCodProdAndQtd = $service->fetchAll(
             token: $token,
             rootEntity: 'AD_VGFOSESERPRGPRD',
@@ -307,9 +311,18 @@ class DashboardController extends Controller {
         );
 
         // group
+        $OSAndCodProdAndQtd = array_values(array_filter(
+            $OSAndCodProdAndQtd,
+            fn ($item) => in_array($item['numOS'], $numerosOS, true)
+        ));
+
         $consumoPorProduto = [];
         foreach ($OSAndCodProdAndQtd as $item) {
             $codProduto = $item['codProduto'];
+
+            if (!$codProduto) {
+                continue;
+            }
 
             if (!isset($consumoPorProduto[$codProduto])) {
                 $consumoPorProduto[$codProduto] = [
@@ -320,9 +333,6 @@ class DashboardController extends Controller {
 
             $consumoPorProduto[$codProduto]['qnt'] += $item['qnt'];
         }
-        $consumoPorProduto = array_values($consumoPorProduto);
-
-        $codigosProduto = array_column($consumoPorProduto, 'codProduto');
 
         $CodprodAndDescrprod = $service->fetchAll(
             token: $token,
@@ -347,10 +357,11 @@ class DashboardController extends Controller {
         }
         foreach ($consumoPorProduto as &$item) {
             $item['descProduto'] = $mapaProdutos[$item['codProduto']] ?? null;
+            $item['qnt'] = round($item['qnt'], 2);
         }
         unset($item);
 
-        return response()->json($consumoPorProduto);
+        return response()->json(array_values($consumoPorProduto));
     }
 
     public function getProximasVisitas(){
