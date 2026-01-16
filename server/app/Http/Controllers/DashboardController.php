@@ -408,13 +408,18 @@ class DashboardController extends Controller {
             $periodo['fim']
         );
 
-        $records = array_map(function ($item) {
+        $hoje = Carbon::today();
+        $records = array_values(array_filter($records, function ($item) use ($hoje) {
             if (empty($item['dataPrevista'])) {
-                return $item;
+                return false;
             }
 
-            $inicio = Carbon::createFromFormat('d/m/Y H:i:s', $item['dataPrevista']);
+            $data = Carbon::createFromFormat('d/m/Y H:i:s', $item['dataPrevista']);
+            return $data->greaterThanOrEqualTo($hoje);
+        }));
 
+        $records = array_map(function ($item) {
+            $inicio = Carbon::createFromFormat('d/m/Y H:i:s', $item['dataPrevista']);
             $fim = !empty($item['horaFim'])
                 ? Carbon::createFromFormat('d/m/Y H:i:s', $item['horaFim'])
                 : null;
@@ -429,6 +434,13 @@ class DashboardController extends Controller {
             ];
         }, $records);
 
-        return response()->json(array_values($records));
+        usort($records, function ($a, $b) {
+            return strcmp(
+                $a['data'] . ' ' . $a['horaInicio'],
+                $b['data'] . ' ' . $b['horaInicio']
+            );
+        });
+
+        return response()->json($records);
     }
 }
