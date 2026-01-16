@@ -109,6 +109,18 @@ class DashboardController extends Controller {
         ];
     }
 
+    private function mapGetProximasVisitas(array $item): array
+    {
+        return [
+            'numOS' => $item['f0']['$'] ?? null,
+            'dataPrevista' => $item['f1']['$'] ?? null,
+            'horaInicio' => $item['f2']['$'] ?? null,
+            'horaFim' => $item['f3']['$'] ?? null,
+            'idCliente' => $item['f4']['$'] ?? null,
+            'nomeCliente' => trim($item['f5']['$'] ?? ''),
+        ];
+    }
+
     // endpoints requests
     public function getBasicData(Request $request)
     {
@@ -364,9 +376,50 @@ class DashboardController extends Controller {
         return response()->json(array_values($consumoPorProduto));
     }
 
-    public function getProximasVisitas(){
-        return response()->json([
-            'message' => 'Endpoint getProximasVisitas',
-        ]);
+    public function getProximasVisitas(Request $request)
+    {
+        $token = $this->autenticarSankhya();
+        $periodo = $this->parsePeriodo($request);
+
+        $service = new SankhyaLoadRecordsService();
+
+        $records = $service->fetchAll(
+            token: $token,
+            rootEntity: 'AD_VGFOSE',
+            fields: [
+                '' => [
+                    'NUMOS',
+                    'DHPREVISTA',
+                    'DHPREVISTA',
+                    'DHPREVISTAFIN',
+                    'CODPARC',
+                    'NOMEPARC'
+                ]
+            ]
+        );
+
+        $records = array_map(
+            fn ($item) => $this->mapGetProximasVisitas($item),
+            $records
+        );
+
+        $records = $this->filtrarPorPeriodo(
+            $records,
+            $periodo['inicio'],
+            $periodo['fim']
+        );
+
+       
+        $hoje = Carbon::today();
+        $records = array_values(array_filter($records, function ($item) use ($hoje) {
+            if (empty($item['dataPrevista'])) {
+                return false;
+            }
+
+            $data = Carbon::createFromFormat('d/m/Y H:i:s', $item['dataPrevista']);
+            return $data->greaterThanOrEqualTo($hoje);
+        }));
+
+        return response()->json($records);
     }
 }
