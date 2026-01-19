@@ -38,22 +38,19 @@ class DashboardController extends Controller {
 
         if ($rangeType === 'month') {
             $select = "
-                FORMAT(OSE.DHPREVISTA, 'yyyy-MM') AS dateKey,
-                FORMAT(OSE.DHPREVISTA, 'MM/yyyy') AS dateDisplay
+                FORMAT(OSE.DHPREVISTA, 'MM/yyyy') AS data
             ";
             $groupBy = "FORMAT(OSE.DHPREVISTA, 'yyyy-MM'), FORMAT(OSE.DHPREVISTA, 'MM/yyyy')";
             $orderBy = "FORMAT(OSE.DHPREVISTA, 'yyyy-MM')";
         } elseif ($rangeType === 'year') {
             $select = "
-                FORMAT(OSE.DHPREVISTA, 'yyyy') AS dateKey,
-                FORMAT(OSE.DHPREVISTA, 'yyyy') AS dateDisplay
+                FORMAT(OSE.DHPREVISTA, 'yyyy') AS data
             ";
             $groupBy = "FORMAT(OSE.DHPREVISTA, 'yyyy')";
             $orderBy = "FORMAT(OSE.DHPREVISTA, 'yyyy')";
         } else {
             $select = "
-                FORMAT(OSE.DHPREVISTA, 'yyyy-MM-dd') AS dateKey,
-                FORMAT(OSE.DHPREVISTA, 'dd/MM/yyyy') AS dateDisplay
+                FORMAT(OSE.DHPREVISTA, 'dd/MM/yyyy') AS data
             ";
             $groupBy = "
                 FORMAT(OSE.DHPREVISTA, 'yyyy-MM-dd'),
@@ -65,10 +62,10 @@ class DashboardController extends Controller {
         $sql = "
             SELECT 
                 {$select},
-                COUNT(1) AS ordensServico
+                COUNT(1) AS quantidade
             FROM sankhya.AD_VGFOSE OSE
             WHERE CAST(OSE.DHPREVISTA AS date) BETWEEN '{$dataInicio}' AND '{$dataFim}'
-              AND OSE.DHPREVISTA IS NOT NULL
+            AND OSE.DHPREVISTA IS NOT NULL
             GROUP BY {$groupBy}
             ORDER BY {$orderBy}
         ";
@@ -80,7 +77,7 @@ class DashboardController extends Controller {
         return response()->json($result);
     }
 
-    public function getAtendimentosTecnico(Request $request)
+public function getAtendimentosTecnico(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
         $dataFim = Carbon::parse($request->query('dataFim'))->startOfDay();
