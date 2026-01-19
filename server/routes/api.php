@@ -10,6 +10,7 @@ use App\Http\Controllers\BairroController;
 use App\Http\Controllers\DepartamentoController;
 use App\Http\Controllers\OrdemServicoController;
 use App\Http\Controllers\RelatorioProdutividadeController;
+use App\Http\Controllers\DashboardController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -51,4 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/cidades/{id}', [CidadeController::class, 'show']);
     Route::get('/bairros', [BairroController::class, 'index']);
     Route::get('/bairros/{id}', [BairroController::class, 'show']);
+
+    Route::get('/dashboard/dados-basicos', [DashboardController::class, 'getBasicData']);
+    Route::get('/dashboard/grafico-ordens-servico', [DashboardController::class, 'getOrdensServico']);
+    Route::get('/dashboard/grafico-atendimentos-tecnico', [DashboardController::class, 'getAtendimentosTecnico']);
+    Route::get('/dashboard/grafico-consumo-produtos', [DashboardController::class, 'getConsumoProdutos']);
+    Route::get('/dashboard/proximas-visitas', [DashboardController::class, 'getProximasVisitas']);
 });
