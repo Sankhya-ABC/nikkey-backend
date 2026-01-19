@@ -37,7 +37,7 @@ public function getBasicData(Request $request)
 
         $sql = "
             SELECT 
-                CAST(OSE.DHPREVISTA AS date) AS data,
+                FORMAT(OSE.DHPREVISTA, 'dd/MM/yyyy') AS data,
                 COUNT(1) AS qtdOrdemServico
             FROM sankhya.AD_VGFOSE OSE
             WHERE CAST(OSE.DHPREVISTA AS date) BETWEEN '{$dataInicio}' AND '{$dataFim}'
@@ -119,9 +119,9 @@ public function getBasicData(Request $request)
         $sql = "
             SELECT 
                 OSE.NUMOS AS numOS,
-                OSE.DHPREVISTA AS data,
-                OSE.DHPREVISTA AS horaInicio,
-                OSE.DHPREVISTAFIN AS horaFim,
+                FORMAT(OSE.DHPREVISTA, 'dd/MM/yyyy') AS data,
+                FORMAT(OSE.DHPREVISTA, 'HH:mm') AS horaInicio,
+                FORMAT(OSE.DHPREVISTAFIN, 'HH:mm') AS horaFim,
                 OSE.NOMEPARC AS nomeCliente
             FROM sankhya.AD_VGFOSE OSE
             INNER JOIN sankhya.TGFPAR PAR
