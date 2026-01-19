@@ -9,7 +9,7 @@ use App\Services\Sankhya\SankhyaLoadRecordsService;
 use App\Services\Sankhya\SankhyaDbExplorerSPService;
 
 class DashboardController extends Controller {
-public function getBasicData(Request $request)
+    public function getBasicData(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
         $dataFim = Carbon::parse($request->query('dataFim'))->startOfDay();
@@ -34,16 +34,43 @@ public function getBasicData(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
         $dataFim = Carbon::parse($request->query('dataFim'))->startOfDay();
+        $rangeType = $request->query('rangeType', 'day');
+
+        if ($rangeType === 'month') {
+            $select = "
+                FORMAT(OSE.DHPREVISTA, 'yyyy-MM') AS dateKey,
+                FORMAT(OSE.DHPREVISTA, 'MM/yyyy') AS dateDisplay
+            ";
+            $groupBy = "FORMAT(OSE.DHPREVISTA, 'yyyy-MM'), FORMAT(OSE.DHPREVISTA, 'MM/yyyy')";
+            $orderBy = "FORMAT(OSE.DHPREVISTA, 'yyyy-MM')";
+        } elseif ($rangeType === 'year') {
+            $select = "
+                FORMAT(OSE.DHPREVISTA, 'yyyy') AS dateKey,
+                FORMAT(OSE.DHPREVISTA, 'yyyy') AS dateDisplay
+            ";
+            $groupBy = "FORMAT(OSE.DHPREVISTA, 'yyyy')";
+            $orderBy = "FORMAT(OSE.DHPREVISTA, 'yyyy')";
+        } else {
+            $select = "
+                FORMAT(OSE.DHPREVISTA, 'yyyy-MM-dd') AS dateKey,
+                FORMAT(OSE.DHPREVISTA, 'dd/MM/yyyy') AS dateDisplay
+            ";
+            $groupBy = "
+                FORMAT(OSE.DHPREVISTA, 'yyyy-MM-dd'),
+                FORMAT(OSE.DHPREVISTA, 'dd/MM/yyyy')
+            ";
+            $orderBy = "FORMAT(OSE.DHPREVISTA, 'yyyy-MM-dd')";
+        }
 
         $sql = "
             SELECT 
-                FORMAT(OSE.DHPREVISTA, 'dd/MM/yyyy') AS data,
-                COUNT(1) AS qtdOrdemServico
+                {$select},
+                COUNT(1) AS ordensServico
             FROM sankhya.AD_VGFOSE OSE
             WHERE CAST(OSE.DHPREVISTA AS date) BETWEEN '{$dataInicio}' AND '{$dataFim}'
-              AND CAST(OSE.DHPREVISTA AS date) IS NOT NULL
-            GROUP BY CAST(OSE.DHPREVISTA AS date)
-            ORDER BY CAST(OSE.DHPREVISTA AS date) ASC
+              AND OSE.DHPREVISTA IS NOT NULL
+            GROUP BY {$groupBy}
+            ORDER BY {$orderBy}
         ";
 
         $service = new SankhyaDbExplorerSPService();
