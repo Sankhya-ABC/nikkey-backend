@@ -40,9 +40,27 @@ class VisitaController extends Controller {
         $result = $service->mapDbExplorerResult($result);
 
         $result = array_map(function ($item) {
-            $item['horaInicio'] = Carbon::parse($item['horaInicio'])->format('H:i');
-            $item['horaFim'] = Carbon::parse($item['horaFim'])->format('H:i');
-            $item['data'] = str_replace('\/', '/', $item['data']);
+            if (!empty($item['data'])) {
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $item['data'])) {
+                } else {
+                    try {
+                        $carbonDate = Carbon::createFromFormat('d/m/Y', $item['data']);
+                        $item['data'] = $carbonDate->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        $carbonDate = Carbon::parse($item['data']);
+                        $item['data'] = $carbonDate->format('Y-m-d');
+                    }
+                }
+            }
+            
+            if (!empty($item['horaInicio'])) {
+                $item['horaInicio'] = Carbon::parse($item['horaInicio'])->format('H:i');
+            }
+            
+            if (!empty($item['horaFim'])) {
+                $item['horaFim'] = Carbon::parse($item['horaFim'])->format('H:i');
+            }
+            
             return $item;
         }, $result);
 
