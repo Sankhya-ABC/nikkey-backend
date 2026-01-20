@@ -11,6 +11,7 @@ use App\Http\Controllers\DepartamentoController;
 use App\Http\Controllers\OrdemServicoController;
 use App\Http\Controllers\RelatorioProdutividadeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\VisitaController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -58,4 +59,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/grafico-atendimentos-tecnico', [DashboardController::class, 'getAtendimentosTecnico']);
     Route::get('/dashboard/grafico-consumo-produtos', [DashboardController::class, 'getConsumoProdutos']);
     Route::get('/dashboard/proximas-visitas', [DashboardController::class, 'getProximasVisitas']);
+
+    Route::get('/visitas', [VisitaController::class, 'getVisitas']);
 });
