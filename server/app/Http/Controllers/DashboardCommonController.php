@@ -113,7 +113,9 @@ class DashboardCommonController extends Controller {
 
     public function getProximasVisitas(Request $request)
     {
-        $idCliente = (int) $request->query('idCliente');
+        $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->endOfDay();
+        $idCliente  = (int) $request->query('idCliente');
 
         $sql = "
             SELECT
@@ -129,6 +131,7 @@ class DashboardCommonController extends Controller {
             WHERE OSE.HRFIN IS NULL
             AND OSE.DHPREVISTA IS NOT NULL
             AND OSE.CODPARC = {$idCliente}
+            AND CAST(OSE.DHPREVISTA AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
             ORDER BY 
                 OSE.DHPREVISTA,
                 OSE.AD_NUMNIKKEY,
