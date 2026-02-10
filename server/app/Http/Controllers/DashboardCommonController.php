@@ -118,7 +118,7 @@ class DashboardCommonController extends Controller {
         $sql = "
             SELECT
                 {$select},
-                SUM(ISNULL(EVI.QTDPRAGA, 0)) AS quantidade
+                SUM(ISNULL(EVI.QTDPRAGA, 0)) AS quantidadeRoedoresMortos
             FROM sankhya.AD_VGFOSE OSE
             INNER JOIN sankhya.AD_VGFOSEEV EVI
                 ON EVI.NUMOS = OSE.NUMOS
