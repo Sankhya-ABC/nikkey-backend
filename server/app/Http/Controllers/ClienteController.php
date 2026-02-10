@@ -36,6 +36,7 @@ class ClienteController extends Controller
 
             return [
                 'id' => $cliente->id,
+                'codparc' => $cliente->codparc_snk,
                 'razaoSocial' => $cliente->razao_social,
                 'nomeFantasia' => $cliente->nome_fantasia,
                 'cnpjCpf' => $cliente->cnpj_cpf,

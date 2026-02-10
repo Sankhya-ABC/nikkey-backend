@@ -161,6 +161,7 @@ class UsuarioController extends Controller
 
             'cliente' => [
                 'id' => $u->cliente->id ?? '',
+                'codparc' => $u->cliente->codparc_snk ?? '',
                 'nomeFantasia' => $u->cliente->nome_fantasia ?? '',
                 'cnpjCpf' => $u->cliente->cnpj_cpf ?? '',
             ],

@@ -31,7 +31,7 @@ class DashboardCommonController extends Controller {
         $result = $service->fetchAll($sql);
         $result = $service->mapDbExplorerResult($result);
 
-        return response()->json($result[0]);
+        return response()->json($result[0] ?? null);
         return $result;
     }
 
