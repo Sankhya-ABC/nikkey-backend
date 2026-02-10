@@ -10,7 +10,8 @@ use App\Http\Controllers\BairroController;
 use App\Http\Controllers\DepartamentoController;
 use App\Http\Controllers\OrdemServicoController;
 use App\Http\Controllers\RelatorioProdutividadeController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardAdminController;
+use App\Http\Controllers\DashboardCommonController;
 use App\Http\Controllers\VisitaController;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -54,11 +55,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bairros', [BairroController::class, 'index']);
     Route::get('/bairros/{id}', [BairroController::class, 'show']);
 
-    Route::get('/dashboard/dados-basicos', [DashboardController::class, 'getBasicData']);
-    Route::get('/dashboard/grafico-ordens-servico', [DashboardController::class, 'getOrdensServico']);
-    Route::get('/dashboard/grafico-atendimentos-tecnico', [DashboardController::class, 'getAtendimentosTecnico']);
-    Route::get('/dashboard/grafico-consumo-produtos', [DashboardController::class, 'getConsumoProdutos']);
-    Route::get('/dashboard/proximas-visitas', [DashboardController::class, 'getProximasVisitas']);
+    Route::get('/dashboard/admin/dados-basicos', [DashboardAdminController::class, 'getBasicData']);
+    Route::get('/dashboard/admin/grafico-ordens-servico', [DashboardAdminController::class, 'getOrdensServico']);
+    Route::get('/dashboard/admin/grafico-atendimentos-tecnico', [DashboardAdminController::class, 'getAtendimentosTecnico']);
+    Route::get('/dashboard/admin/grafico-consumo-produtos', [DashboardAdminController::class, 'getConsumoProdutos']);
+    Route::get('/dashboard/admin/proximas-visitas', [DashboardAdminController::class, 'getProximasVisitas']);
+
+    Route::get('/dashboard/common/ultima-visita', [DashboardCommonController::class, 'getUltimaVisita']);
+    Route::get('/dashboard/common/download-certificado', [DashboardCommonController::class, 'getDownloadCertificado']);
+    Route::get('/dashboard/common/foco-pragas-encontradas', [DashboardCommonController::class, 'getFocoPragasEncontradas']);
+    Route::get('/dashboard/common/roedores-capturados', [DashboardCommonController::class, 'getRoedoresCapturados']);
+    Route::get('/dashboard/common/consumo-produtos', [DashboardCommonController::class, 'getConsumoProdutos']);
+    Route::get('/dashboard/common/proximas-visitas', [DashboardCommonController::class, 'getProximasVisitas']);
+
+    
+    
 
     Route::get('/visitas', [VisitaController::class, 'getVisitas']);
 });
