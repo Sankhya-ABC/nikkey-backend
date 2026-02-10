@@ -43,27 +43,42 @@ class DashboardCommonController extends Controller {
     public function getFocoPragasEncontradas(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
-        $dataFim    = Carbon::parse($request->query('dataFim'))->endOfDay();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->startOfDay();
         $idCliente  = (int) $request->query('idCliente');
+        $rangeType  = $request->query('rangeType', 'day');
+
+        if ($rangeType === 'month') {
+            $select = "FORMAT(EVI.DTEV, 'MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(EVI.DTEV, 'yyyy-MM'),
+                FORMAT(EVI.DTEV, 'MM/yyyy')
+            ";
+            $orderBy = "FORMAT(EVI.DTEV, 'yyyy-MM')";
+        } elseif ($rangeType === 'year') {
+            $select = "FORMAT(EVI.DTEV, 'yyyy') AS data";
+            $groupBy = "FORMAT(EVI.DTEV, 'yyyy')";
+            $orderBy = "FORMAT(EVI.DTEV, 'yyyy')";
+        } else {
+            $select = "FORMAT(EVI.DTEV, 'dd/MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(EVI.DTEV, 'yyyy-MM-dd'),
+                FORMAT(EVI.DTEV, 'dd/MM/yyyy')
+            ";
+            $orderBy = "FORMAT(EVI.DTEV, 'yyyy-MM-dd')";
+        }
 
         $sql = "
             SELECT
-                OSE.NUMOS AS numOS,
-                OSE.AD_NUMNIKKEY AS contrato,
-                OSE.NUMOSNIKKEY AS idOS,
-                OSE.TIPOOS AS tipoOS,
-                CONVERT(VARCHAR(10), EVI.DTEV, 103) AS data,
-                EVI.CODPRAGA AS idPraga,
-                PRA.NOME_PRAGA AS nomePraga,
-                ISNULL(EVI.QTDPRAGA, 0) AS quantidade
-            FROM sankhya.AD_VGFOSE OSE 
+                {$select},
+                SUM(ISNULL(EVI.QTDPRAGA, 0)) AS quantidade
+            FROM sankhya.AD_VGFOSE OSE
             INNER JOIN sankhya.AD_VGFOSEEV EVI
                 ON EVI.NUMOS = OSE.NUMOS
-            LEFT JOIN sankhya.AD_TABPRAGAS PRA
-                ON PRA.CODPRAGA = EVI.CODPRAGA
             WHERE OSE.CODPARC = {$idCliente}
             AND CAST(EVI.DTEV AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
             AND EVI.TIPPRAGA <> 'R'
+            GROUP BY {$groupBy}
+            ORDER BY {$orderBy}
         ";
 
         $service = new SankhyaDbExplorerSPService();
@@ -76,27 +91,42 @@ class DashboardCommonController extends Controller {
     public function getRoedoresCapturados(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
-        $dataFim    = Carbon::parse($request->query('dataFim'))->endOfDay();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->startOfDay();
         $idCliente  = (int) $request->query('idCliente');
+        $rangeType  = $request->query('rangeType', 'day');
+
+        if ($rangeType === 'month') {
+            $select = "FORMAT(EVI.DTEV, 'MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(EVI.DTEV, 'yyyy-MM'),
+                FORMAT(EVI.DTEV, 'MM/yyyy')
+            ";
+            $orderBy = "FORMAT(EVI.DTEV, 'yyyy-MM')";
+        } elseif ($rangeType === 'year') {
+            $select = "FORMAT(EVI.DTEV, 'yyyy') AS data";
+            $groupBy = "FORMAT(EVI.DTEV, 'yyyy')";
+            $orderBy = "FORMAT(EVI.DTEV, 'yyyy')";
+        } else {
+            $select = "FORMAT(EVI.DTEV, 'dd/MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(EVI.DTEV, 'yyyy-MM-dd'),
+                FORMAT(EVI.DTEV, 'dd/MM/yyyy')
+            ";
+            $orderBy = "FORMAT(EVI.DTEV, 'yyyy-MM-dd')";
+        }
 
         $sql = "
             SELECT
-                OSE.NUMOS AS numOS,
-                OSE.AD_NUMNIKKEY AS contrato,
-                OSE.NUMOSNIKKEY AS idOS,
-                OSE.TIPOOS AS tipoOS,
-                CONVERT(VARCHAR(10), EVI.DTEV, 103) AS data,
-                EVI.CODPRAGA AS idPraga,
-                PRA.NOME_PRAGA AS nomePraga,
-                ISNULL(EVI.QTDPRAGA, 0) AS quantidade
-            FROM sankhya.AD_VGFOSE OSE 
+                {$select},
+                SUM(ISNULL(EVI.QTDPRAGA, 0)) AS quantidade
+            FROM sankhya.AD_VGFOSE OSE
             INNER JOIN sankhya.AD_VGFOSEEV EVI
                 ON EVI.NUMOS = OSE.NUMOS
-            LEFT JOIN sankhya.AD_TABPRAGAS PRA
-                ON PRA.CODPRAGA = EVI.CODPRAGA
             WHERE OSE.CODPARC = {$idCliente}
             AND CAST(EVI.DTEV AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
             AND EVI.TIPPRAGA = 'R'
+            GROUP BY {$groupBy}
+            ORDER BY {$orderBy}
         ";
 
         $service = new SankhyaDbExplorerSPService();
@@ -105,6 +135,7 @@ class DashboardCommonController extends Controller {
 
         return response()->json($result);
     }
+
 
     public function getConsumoProdutos(Request $request)
     {
