@@ -8,7 +8,7 @@ use App\Services\Sankhya\AuthSankhya;
 use App\Services\Sankhya\SankhyaLoadRecordsService;
 use App\Services\Sankhya\SankhyaDbExplorerSPService;
 
-class DashboardController extends Controller {
+class DashboardAdminController extends Controller {
     public function getBasicData(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
