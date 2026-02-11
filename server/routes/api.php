@@ -12,7 +12,7 @@ use App\Http\Controllers\OrdemServicoController;
 use App\Http\Controllers\RelatorioProdutividadeController;
 use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\DashboardCommonController;
-use App\Http\Controllers\RelatoriosCommonController;
+use App\Http\Controllers\RelatorioCommonController;
 use App\Http\Controllers\VisitaController;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -69,17 +69,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/common/consumo-produtos', [DashboardCommonController::class, 'getConsumoProdutos']);
     Route::get('/dashboard/common/proximas-visitas', [DashboardCommonController::class, 'getProximasVisitas']);
 
-    Route::get('/relatorios/common/consumo-produtos', [RelatoriosCommonController::class, 'getConsumoProdutos']);
-    Route::get('/relatorios/common/consumo-insumos', [RelatoriosCommonController::class, 'getConsumoInsumos']);
-    Route::get('/relatorios/common/foco-pragas-encontradas', [RelatoriosCommonController::class, 'getFocoPragasEncontradas']);
-    Route::get('/relatorios/common/inseticidas-pragas', [RelatoriosCommonController::class, 'getInseticidasXPragas']);
-    Route::get('/relatorios/common/armadilhas-feromonio', [RelatoriosCommonController::class, 'getArmadilhasFeromonio']);
-    Route::get('/relatorios/common/armadilhas-luminosas', [RelatoriosCommonController::class, 'getArmadilhasLuminosas']);
-    Route::get('/relatorios/common/roedores-mortos', [RelatoriosCommonController::class, 'getRoedoresMortos']);
-    Route::get('/relatorios/common/placa-cola-armadilha-mecanica', [RelatoriosCommonController::class, 'getPlacaColaArmadilhaMecanica']);
-    Route::get('/relatorios/common/iscas-roidas', [RelatoriosCommonController::class, 'getIscasRoidas']);
-    Route::get('/relatorios/common/rodenticidas-roedores', [RelatoriosCommonController::class, 'getRodenticidasXRoedores']);
-    Route::get('/relatorios/common/nao-conformidades', [RelatoriosCommonController::class, 'getNaoConformidades']);
+    Route::get('/relatorios/common/consumo-produtos', [RelatorioCommonController::class, 'getConsumoProdutos']);
+    Route::get('/relatorios/common/consumo-insumos', [RelatorioCommonController::class, 'getConsumoInsumos']);
+    Route::get('/relatorios/common/foco-pragas-encontradas', [RelatorioCommonController::class, 'getFocoPragasEncontradas']);
+    Route::get('/relatorios/common/inseticidas-pragas', [RelatorioCommonController::class, 'getInseticidasXPragas']);
+    Route::get('/relatorios/common/armadilhas-feromonio', [RelatorioCommonController::class, 'getArmadilhasFeromonio']);
+    Route::get('/relatorios/common/armadilhas-luminosas', [RelatorioCommonController::class, 'getArmadilhasLuminosas']);
+    Route::get('/relatorios/common/roedores-mortos', [RelatorioCommonController::class, 'getRoedoresMortos']);
+    Route::get('/relatorios/common/placa-cola-armadilha-mecanica', [RelatorioCommonController::class, 'getPlacaColaArmadilhaMecanica']);
+    Route::get('/relatorios/common/iscas-roidas', [RelatorioCommonController::class, 'getIscasRoidas']);
+    Route::get('/relatorios/common/rodenticidas-roedores', [RelatorioCommonController::class, 'getRodenticidasXRoedores']);
+    Route::get('/relatorios/common/nao-conformidades', [RelatorioCommonController::class, 'getNaoConformidades']);
 
 
 
