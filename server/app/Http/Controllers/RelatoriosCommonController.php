@@ -131,7 +131,50 @@ class RelatoriosCommonController extends Controller {
 
     public function getFocoPragasEncontradas(Request $request)
     {
-        return 'getFocoPragasEncontradas';
+        $dataInicio = Carbon::parse($request->query('dataInicio'))->toDateString();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->toDateString();
+        $rangeType  = $request->query('rangeType', 'day');
+        $idCliente  = (int) $request->query('idCliente');
+
+        if ($rangeType === 'month') {
+            $select = "FORMAT(OSE.HRFIN, 'MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(OSE.HRFIN, 'yyyy-MM'),
+                FORMAT(OSE.HRFIN, 'MM/yyyy')
+            ";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy-MM')";
+        } elseif ($rangeType === 'year') {
+            $select = "FORMAT(OSE.HRFIN, 'yyyy') AS data";
+            $groupBy = "FORMAT(OSE.HRFIN, 'yyyy')";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy')";
+        } else {
+            $select = "FORMAT(OSE.HRFIN, 'dd/MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(OSE.HRFIN, 'yyyy-MM-dd'),
+                FORMAT(OSE.HRFIN, 'dd/MM/yyyy')
+            ";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy-MM-dd')";
+        }
+
+        $sql = "
+            SELECT
+                {$select},
+                SUM(ISNULL(EVI.QTDPRAGA, 0)) AS quantidade
+            FROM sankhya.AD_VGFOSE OSE
+            INNER JOIN sankhya.AD_VGFOSEEV EVI
+                ON EVI.NUMOS = OSE.NUMOS
+            WHERE OSE.HRFIN IS NOT NULL
+            AND OSE.CODPARC = {$idCliente}
+            AND CAST(OSE.HRFIN AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
+            GROUP BY {$groupBy}
+            ORDER BY {$orderBy}
+        ";
+
+        $service = new SankhyaDbExplorerSPService();
+        $result = $service->fetchAll($sql);
+        $result = $service->mapDbExplorerResult($result);
+
+        return response()->json($result);
     }
 
     public function getInseticidasXPragas(Request $request)
