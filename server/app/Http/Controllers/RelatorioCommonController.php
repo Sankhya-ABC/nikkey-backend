@@ -8,7 +8,7 @@ use App\Services\Sankhya\AuthSankhya;
 use App\Services\Sankhya\SankhyaLoadRecordsService;
 use App\Services\Sankhya\SankhyaDbExplorerSPService;
 
-class RelatoriosCommonController extends Controller {
+class RelatorioCommonController extends Controller {
     public function getConsumoProdutos(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->toDateString();
