@@ -411,6 +411,32 @@ class RelatorioCommonController extends Controller {
 
     public function getNaoConformidades(Request $request)
     {
-        return 'getNaoConformidades';
+        $dataInicio = Carbon::parse($request->query('dataInicio'))->toDateString();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->toDateString();
+        $idCliente  = (int) $request->query('idCliente');
+
+        $sql = "
+            SELECT
+                FORMAT(OSE.HRFIN, 'dd/MM/yyyy') AS data,
+                ONC.NUMOS       AS numOs,
+                ONC.SETOR       AS areaLocal,
+                TNC.DESCRICAO   AS naoConformidade,
+                ONC.TIPORES     AS acaoSugerida
+            FROM sankhya.AD_VGFOSE OSE
+            INNER JOIN sankhya.AD_VGFOSENC ONC
+                ON ONC.NUMOS = OSE.NUMOS
+            LEFT JOIN sankhya.AD_TIPNAOCONFORM TNC
+                ON TNC.ID = ONC.TIPONC
+            WHERE OSE.HRFIN IS NOT NULL
+            AND OSE.CODPARC = {$idCliente}
+            AND CAST(OSE.HRFIN AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
+            ORDER BY OSE.HRFIN
+        ";
+
+        $service = new SankhyaDbExplorerSPService();
+        $result = $service->fetchAll($sql);
+        $result = $service->mapDbExplorerResult($result);
+
+        return response()->json($result);
     }
 }
