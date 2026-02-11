@@ -182,9 +182,67 @@ class RelatoriosCommonController extends Controller {
         return 'getInseticidasXPragas';
     }
 
-    public function getArmadilhasFeromônio(Request $request)
+    public function getArmadilhasFeromonio(Request $request)
     {
-        return 'getArmadilhasFeromônio';
+        $dataInicio = Carbon::parse($request->query('dataInicio'))->toDateString();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->toDateString();
+        $rangeType  = $request->query('rangeType', 'day');
+        $idCliente  = (int) $request->query('idCliente');
+
+        if ($rangeType === 'month') {
+            $select = "FORMAT(OSE.HRFIN, 'MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(OSE.HRFIN, 'yyyy-MM'),
+                FORMAT(OSE.HRFIN, 'MM/yyyy')
+            ";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy-MM')";
+        } elseif ($rangeType === 'year') {
+            $select = "FORMAT(OSE.HRFIN, 'yyyy') AS data";
+            $groupBy = "FORMAT(OSE.HRFIN, 'yyyy')";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy')";
+        } else {
+            $select = "FORMAT(OSE.HRFIN, 'dd/MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(OSE.HRFIN, 'yyyy-MM-dd'),
+                FORMAT(OSE.HRFIN, 'dd/MM/yyyy')
+            ";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy-MM-dd')";
+        }
+
+        $sql = "
+            SELECT
+                {$select},
+
+                SUM(CASE 
+                    WHEN PRU.CODPROD = 502
+                    THEN ISNULL(PRU.QTDNEG, 0)
+                    ELSE 0
+                END) AS quantidadeGachon,
+
+                SUM(CASE 
+                    WHEN PRU.CODPROD = 503
+                    THEN ISNULL(PRU.QTDNEG, 0)
+                    ELSE 0
+                END) AS quantidadeBioSerrico
+
+            FROM sankhya.AD_VGFOSE OSE
+            INNER JOIN sankhya.AD_VGFOSESERPRGPRDUTIL PRU
+                ON PRU.NUMOS = OSE.NUMOS
+
+            WHERE OSE.HRFIN IS NOT NULL
+            AND OSE.CODPARC = {$idCliente}
+            AND CAST(OSE.HRFIN AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
+            AND PRU.CODPROD IN (502, 503)
+
+            GROUP BY {$groupBy}
+            ORDER BY {$orderBy}
+        ";
+
+        $service = new SankhyaDbExplorerSPService();
+        $result = $service->fetchAll($sql);
+        $result = $service->mapDbExplorerResult($result);
+
+        return response()->json($result);
     }
 
     public function getArmadilhasLuminosas(Request $request)

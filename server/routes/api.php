@@ -73,7 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/relatorios/common/consumo-insumos', [RelatoriosCommonController::class, 'getConsumoInsumos']);
     Route::get('/relatorios/common/foco-pragas-encontradas', [RelatoriosCommonController::class, 'getFocoPragasEncontradas']);
     Route::get('/relatorios/common/inseticidas-pragas', [RelatoriosCommonController::class, 'getInseticidasXPragas']);
-    Route::get('/relatorios/common/armadilhas-feromonio', [RelatoriosCommonController::class, 'getArmadilhasFeromônio']);
+    Route::get('/relatorios/common/armadilhas-feromonio', [RelatoriosCommonController::class, 'getArmadilhasFeromonio']);
     Route::get('/relatorios/common/armadilhas-luminosas', [RelatoriosCommonController::class, 'getArmadilhasLuminosas']);
     Route::get('/relatorios/common/roedores-mortos', [RelatoriosCommonController::class, 'getRoedoresMortos']);
     Route::get('/relatorios/common/placa-cola-armadilha-mecanica', [RelatoriosCommonController::class, 'getPlacaColaArmadilhaMecanica']);
