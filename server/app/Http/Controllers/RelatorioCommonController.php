@@ -179,7 +179,70 @@ class RelatorioCommonController extends Controller {
 
     public function getInseticidasXPragas(Request $request)
     {
-        return 'getInseticidasXPragas';
+        $dataInicio = Carbon::parse($request->query('dataInicio'))->toDateString();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->toDateString();
+        $rangeType  = $request->query('rangeType', 'day');
+        $idCliente  = (int) $request->query('idCliente');
+
+        if ($rangeType === 'month') {
+            $select = "FORMAT(OSE.HRFIN, 'MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(OSE.HRFIN, 'yyyy-MM'),
+                FORMAT(OSE.HRFIN, 'MM/yyyy')
+            ";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy-MM')";
+        } elseif ($rangeType === 'year') {
+            $select = "FORMAT(OSE.HRFIN, 'yyyy') AS data";
+            $groupBy = "FORMAT(OSE.HRFIN, 'yyyy')";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy')";
+        } else {
+            $select = "FORMAT(OSE.HRFIN, 'dd/MM/yyyy') AS data";
+            $groupBy = "
+                FORMAT(OSE.HRFIN, 'yyyy-MM-dd'),
+                FORMAT(OSE.HRFIN, 'dd/MM/yyyy')
+            ";
+            $orderBy = "FORMAT(OSE.HRFIN, 'yyyy-MM-dd')";
+        }
+
+        $sql = "
+            SELECT
+                {$select},
+
+                SUM(CASE
+                    WHEN PRA_EVI.GRU_PRAGAS <> 1
+                    THEN ISNULL(EVI.QTDPRAGA,0)
+                    ELSE 0
+                END) AS quantidadePragasEncontradas,
+
+                SUM(CASE
+                    WHEN PRA_PUR.GRU_PRAGAS <> 1
+                    THEN ISNULL(PUR.QTDNEG,0)
+                    ELSE 0
+                END) AS quantidadeInseticida
+
+            FROM sankhya.AD_VGFOSE OSE
+            LEFT JOIN sankhya.AD_VGFOSEEV EVI
+                ON EVI.NUMOS = OSE.NUMOS
+            LEFT JOIN sankhya.AD_TABPRAGAS PRA_EVI
+                ON PRA_EVI.CODPRAGA = EVI.CODPRAGA
+            LEFT JOIN sankhya.AD_VGFOSESERPRGPRDUTIL PUR
+                ON PUR.NUMOS = OSE.NUMOS
+            LEFT JOIN sankhya.AD_TABPRAGAS PRA_PUR
+                ON PRA_PUR.CODPRAGA = PUR.PRAGA
+
+            WHERE OSE.HRFIN IS NOT NULL
+            AND OSE.CODPARC = {$idCliente}
+            AND CAST(OSE.HRFIN AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
+
+            GROUP BY {$groupBy}
+            ORDER BY {$orderBy}
+        ";
+
+        $service = new SankhyaDbExplorerSPService();
+        $result = $service->fetchAll($sql);
+        $result = $service->mapDbExplorerResult($result);
+
+        return response()->json($result);
     }
 
     public function getArmadilhasFeromonio(Request $request)
