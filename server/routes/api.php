@@ -81,7 +81,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/relatorios/common/rodenticidas-roedores', [RelatorioCommonController::class, 'getRodenticidasXRoedores']);
     Route::get('/relatorios/common/nao-conformidades', [RelatorioCommonController::class, 'getNaoConformidades']);
 
-
+    Route::get('/pragas/grupo-pragas', [RelatorioCommonController::class, 'getGrupoPragas']);
+    Route::get('/pragas', [RelatorioCommonController::class, 'getPragasPorGrupo']);
 
     Route::get('/visitas', [VisitaController::class, 'getVisitas']);
 });
