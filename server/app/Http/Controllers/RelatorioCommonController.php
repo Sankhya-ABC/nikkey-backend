@@ -619,7 +619,7 @@ class RelatorioCommonController extends Controller {
         $sql = "
             SELECT
                 PRA.GRU_PRAGAS AS id,
-                OPC.OPCAO      AS nome
+                OPC.OPCAO      AS descricao
             FROM sankhya.AD_TABPRAGAS PRA
             INNER JOIN sankhya.TDDOPC OPC
                 ON OPC.VALOR = PRA.GRU_PRAGAS
@@ -647,7 +647,7 @@ class RelatorioCommonController extends Controller {
         $sql = "
             SELECT
                 PRA.CODPRAGA   AS id,
-                PRA.NOME_PRAGA AS nome
+                PRA.NOME_PRAGA AS descricao
             FROM sankhya.AD_TABPRAGAS PRA
             WHERE PRA.GRU_PRAGAS = {$idGrupoPraga}
             ORDER BY PRA.NOME_PRAGA

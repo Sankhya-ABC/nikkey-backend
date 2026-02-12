@@ -91,40 +91,65 @@ class DashboardCommonController extends Controller {
     public function getRoedoresCapturados(Request $request)
     {
         $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
-        $dataFim    = Carbon::parse($request->query('dataFim'))->startOfDay();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->endOfDay();
         $idCliente  = (int) $request->query('idCliente');
         $rangeType  = $request->query('rangeType', 'day');
 
         if ($rangeType === 'month') {
-            $select = "FORMAT(EVI.DTEV, 'MM/yyyy') AS data";
+            $select = "FORMAT(DATA_REF, 'MM/yyyy') AS data";
             $groupBy = "
-                FORMAT(EVI.DTEV, 'yyyy-MM'),
-                FORMAT(EVI.DTEV, 'MM/yyyy')
+                FORMAT(DATA_REF, 'yyyy-MM'),
+                FORMAT(DATA_REF, 'MM/yyyy')
             ";
-            $orderBy = "FORMAT(EVI.DTEV, 'yyyy-MM')";
+            $orderBy = "FORMAT(DATA_REF, 'yyyy-MM')";
         } elseif ($rangeType === 'year') {
-            $select = "FORMAT(EVI.DTEV, 'yyyy') AS data";
-            $groupBy = "FORMAT(EVI.DTEV, 'yyyy')";
-            $orderBy = "FORMAT(EVI.DTEV, 'yyyy')";
+            $select = "FORMAT(DATA_REF, 'yyyy') AS data";
+            $groupBy = "FORMAT(DATA_REF, 'yyyy')";
+            $orderBy = "FORMAT(DATA_REF, 'yyyy')";
         } else {
-            $select = "FORMAT(EVI.DTEV, 'dd/MM/yyyy') AS data";
+            $select = "FORMAT(DATA_REF, 'dd/MM/yyyy') AS data";
             $groupBy = "
-                FORMAT(EVI.DTEV, 'yyyy-MM-dd'),
-                FORMAT(EVI.DTEV, 'dd/MM/yyyy')
+                FORMAT(DATA_REF, 'yyyy-MM-dd'),
+                FORMAT(DATA_REF, 'dd/MM/yyyy')
             ";
-            $orderBy = "FORMAT(EVI.DTEV, 'yyyy-MM-dd')";
+            $orderBy = "FORMAT(DATA_REF, 'yyyy-MM-dd')";
         }
 
         $sql = "
             SELECT
                 {$select},
-                SUM(ISNULL(EVI.QTDPRAGA, 0)) AS quantidadeRoedoresMortos
-            FROM sankhya.AD_VGFOSE OSE
-            INNER JOIN sankhya.AD_VGFOSEEV EVI
-                ON EVI.NUMOS = OSE.NUMOS
-            WHERE OSE.CODPARC = {$idCliente}
-            AND CAST(EVI.DTEV AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
-            AND EVI.TIPPRAGA = 'R'
+                SUM(quantidadePlacasCola) AS quantidadePlacasCola,
+                SUM(quantidadeRoedoresMortos) AS quantidadeRoedoresMortos
+            FROM (
+                SELECT
+                    OSE.HRFIN AS DATA_REF,
+
+                    ISNULL(
+                        (
+                            SELECT SUM(ISNULL(PRO.QTDNEG, 0))
+                            FROM sankhya.AD_VGFOSESERPRGPRDUTIL PRO
+                            WHERE PRO.NUMOS = OSE.NUMOS
+                            AND PRO.CODPROD IN (63)
+                        ), 0
+                    ) AS quantidadePlacasCola,
+
+                    ISNULL(
+                        (
+                            SELECT SUM(ISNULL(EVI.QTDPRAGA, 0))
+                            FROM sankhya.AD_VGFOSEEV EVI
+                            INNER JOIN sankhya.AD_TABPRAGAS PRA
+                                ON PRA.CODPRAGA = EVI.CODPRAGA
+                            WHERE EVI.NUMOS = OSE.NUMOS
+                            AND PRA.GRU_PRAGAS = 1
+                            AND EVI.INDIVIDUO = 'M'
+                        ), 0
+                    ) AS quantidadeRoedoresMortos
+
+                FROM sankhya.AD_VGFOSE OSE
+                WHERE OSE.HRFIN IS NOT NULL
+                AND OSE.CODPARC = {$idCliente}
+                AND CAST(OSE.HRFIN AS DATE) BETWEEN '{$dataInicio}' AND '{$dataFim}'
+            ) AS N
             GROUP BY {$groupBy}
             ORDER BY {$orderBy}
         ";
@@ -135,7 +160,6 @@ class DashboardCommonController extends Controller {
 
         return response()->json($result);
     }
-
 
     public function getConsumoProdutos(Request $request)
     {
