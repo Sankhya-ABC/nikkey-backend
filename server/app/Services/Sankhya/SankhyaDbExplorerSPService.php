@@ -4,6 +4,7 @@ namespace App\Services\Sankhya;
 
 use GuzzleHttp\Client;
 use App\Services\Sankhya\AuthSankhya;
+use Illuminate\Support\Facades\Cache;
 
 class SankhyaDbExplorerSPService
 {
@@ -14,7 +15,9 @@ class SankhyaDbExplorerSPService
     {
         $this->client = new Client([
             'verify' => false,
-            'timeout' => 120
+            'timeout' => 60,
+            'connect_timeout' => 10,
+            'http_errors' => false,
         ]);
 
         $this->gateway = env('SNK_GATEWAY');
@@ -41,32 +44,35 @@ class SankhyaDbExplorerSPService
 
     public function fetchAll(string $sql): array
     {
-        $token = (new AuthSankhya())->login();
+        $cacheKey = 'sankhya_dbexplorer_' . md5($sql);
 
-        if (!$token) {
-            abort(500, 'Falha ao autenticar no Sankhya');
-        }
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($sql) {
 
-        $body = [
-            'serviceName' => 'DbExplorerSP.executeQuery',
-            'requestBody' => [
-                'sql' => $sql
-            ]
-        ];
+            $token = (new AuthSankhya())->login();
 
-        $response = $this->client->post(
-            rtrim($this->gateway, '/') . '/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json',
-            [
-                'headers' => [
-                    'Authorization' => "Bearer {$token}",
-                    'Accept' => 'application/json',
-                ],
-                'json' => $body
-            ]
-        );
+            if (!$token) {
+                throw new \Exception('Falha ao autenticar no Sankhya');
+            }
 
-        $data = json_decode($response->getBody()->getContents(), true);
+            $body = [
+                'serviceName' => 'DbExplorerSP.executeQuery',
+                'requestBody' => [
+                    'sql' => $sql
+                ]
+            ];
 
-        return $data;
+            $response = $this->client->post(
+                rtrim($this->gateway, '/') . '/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json',
+                [
+                    'headers' => [
+                        'Authorization' => "Bearer {$token}",
+                        'Accept' => 'application/json',
+                    ],
+                    'json' => $body
+                ]
+            );
+
+            return json_decode($response->getBody()->getContents(), true);
+        });
     }
 }
