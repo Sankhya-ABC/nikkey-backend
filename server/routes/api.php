@@ -85,4 +85,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pragas', [RelatorioCommonController::class, 'getPragasPorGrupo']);
 
     Route::get('/visitas', [VisitaController::class, 'getVisitas']);
+    Route::get('/cronograma-visita', [VisitaController::class, 'getCronogramaVisita']);
 });

@@ -66,4 +66,39 @@ class VisitaController extends Controller {
 
         return response()->json($result);
     }
+
+    public function getCronogramaVisita(Request $request)
+    {
+        $nomeTecnico = $request->query('nomeTecnico');
+
+        $sql = "
+            SELECT
+                OSE.CODTEC  AS idtecnico,
+                OSE.NOMETEC AS tecnico,
+                CONVERT(VARCHAR(10), OSE.DHPREVISTA, 103) AS data,
+                CONVERT(VARCHAR(8), OSE.DHPREVISTA, 108) AS hora,
+                USU.AD_TELEFONE AS telefone,
+                OSE.STATUSOS AS status
+            FROM sankhya.AD_VGFOSE OSE
+            INNER JOIN sankhya.TSIUSU USU
+                ON USU.CODUSU = OSE.CODTEC
+            WHERE CAST(OSE.DHPREVISTA AS DATE) >= CAST(GETDATE() AS DATE)
+        ";
+
+        if (!empty($nomeTecnico)) {
+            $sql .= " AND UPPER(OSE.NOMETEC) LIKE UPPER('%{$nomeTecnico}%')";
+        }
+
+        $sql .= "
+            ORDER BY 
+                CONVERT(VARCHAR(10), OSE.DHPREVISTA, 103),
+                CONVERT(VARCHAR(8), OSE.DHPREVISTA, 108)
+        ";
+
+        $service = new SankhyaDbExplorerSPService();
+        $result = $service->fetchAll($sql);
+        $result = $service->mapDbExplorerResult($result);
+
+        return response()->json($result);
+    }
 }
