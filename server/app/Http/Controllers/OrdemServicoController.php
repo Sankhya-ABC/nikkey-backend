@@ -118,7 +118,32 @@ class OrdemServicoController extends Controller
         $result = $service->fetchAll($sql);
         $result = $service->mapDbExplorerResult($result)[0];
 
-        return response()->json($result);
+        if (empty($result)) {
+            return response()->json(['message' => 'OS não encontrada'], 404);
+        }
+
+        $campos = [
+        'Empresa' => $result[nomeEmpresa],
+        'Alvará' => $result[alvara],
+        'Vencimento Alvará' => $result[vencimentoAlvara],
+        'Razão Social' => $result[razaoSocial],
+        'Nome Fantasia' => $result[nomeFantasia],
+        'Logradouro' => $result[logradouro],
+        'Número' => $result[numero],
+        'Complemento' => $result[complemento],
+        'Bairro' => $result[bairro],
+        'Estado' => $result[estado],
+        'Cidade' => $result[cidade],
+        'CEP' => $result[cep],
+        'Tecnico' => $result[nomeTecnico],
+        'Data Visita' => $result[dataVisita],
+        'Hora Início' => $result[horaInicio],
+        'Hora Fim' => $result[horaFim],
+        ];
+
+        $pdf = Pdf::loadView('pdf.ordem-servico', compact('campos'));
+
+        return $pdf->download("ordem_servico_{$id}.pdf");
     }
 
     public function index(Request $request)
