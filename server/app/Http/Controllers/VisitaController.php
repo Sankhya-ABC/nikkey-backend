@@ -73,8 +73,8 @@ class VisitaController extends Controller {
 
         $sql = "
             SELECT
-                OSE.CODTEC  AS idtecnico,
-                OSE.NOMETEC AS tecnico,
+                OSE.CODTEC AS idTecnico,
+                OSE.NOMETEC AS nomeTecnico,
                 CONVERT(VARCHAR(10), OSE.DHPREVISTA, 103) AS data,
                 CONVERT(VARCHAR(8), OSE.DHPREVISTA, 108) AS hora,
                 USU.AD_TELEFONE AS telefone,
