@@ -22,7 +22,7 @@ class UsuarioController extends Controller
                 $q->where('name', 'LIKE', "%{$search}%")
                   ->orWhere('email', 'LIKE', "%{$search}%")
                   ->orWhereHas('departamento', function ($d) use ($search) {
-                      $d->where('nome', 'LIKE', "%{$search}%");
+                      $d->where('descricao', 'LIKE', "%{$search}%");
                   })
                   ->orWhereHas('tipoUsuario', function ($t) use ($search) {
                       $t->where('descricao', 'LIKE', "%{$search}%");
@@ -154,7 +154,7 @@ class UsuarioController extends Controller
 
             'departamento' => [
                 'id' => $u->departamento->id ?? '',
-                'descricao' => $u->departamento->descricao ?? '',
+                'descricao' => $u->departamento->descricao ?? $u->departamento->descricao ?? '',
             ],
 
             'perfil' => $u->tipoUsuario->descricao ?? null,
