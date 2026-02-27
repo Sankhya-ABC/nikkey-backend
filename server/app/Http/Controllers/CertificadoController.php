@@ -29,16 +29,29 @@ class CertificadoController extends Controller {
 
     public function getCertificadoByIdOS(Request $request)
     {
+        $idCliente = (int) $request->query('idCliente');
         $idOS = $request->query('idOS');
         
         if (empty($idOS)) {
             return response()->json(['error' => 'idOS é obrigatório'], 400);
         }
 
+        if (empty($idCliente)) {
+            return response()->json(['error' => 'idCliente é obrigatório'], 400);
+        }
+
+        $whereConditions = ["OSE.NUMOS = '{$idOS}'"];
+        
+        if ($idCliente > 0) {
+            $whereConditions[] = "OSE.CODPARC = {$idCliente}";
+        }
+        
+        $whereClause = "WHERE " . implode(" AND ", $whereConditions);
+
         $sql = "
         SELECT
-            OSE.NUMOS AS idOs,
-            OSE.NUMOSNIKKEY AS numOs,
+            OSE.NUMOS AS idOS,
+            OSE.NUMOSNIKKEY AS numOS,
 
             OSE.CODPARC,
             PAR.RAZAOSOCIAL AS PrazaoSocial,     
@@ -163,7 +176,7 @@ class CertificadoController extends Controller {
             ON VEN.CODVEND = CAB.AD_CODVEND
         LEFT JOIN sankhya.TSIUSU TUS
             ON TUS.CODVEND = VEN.CODVEND
-        WHERE OSE.NUMOS = '{$idOs}'
+        {$whereClause}
         ";
 
         $service = new SankhyaDbExplorerSPService();
@@ -176,9 +189,13 @@ class CertificadoController extends Controller {
         $mappedResult = $service->mapDbExplorerResult($result);
         $item = $mappedResult[0];
 
+        if ($idCliente > 0 && ($item['CODPARC'] ?? 0) != $idCliente) {
+            return response()->json(['error' => 'Certificado não pertence ao cliente informado'], 403);
+        }
+
         $formatted = [
-            'idOs' => $item['idOs'] ?? null,
-            'numOs' => $item['numOs'] ?? null,
+            'idOS' => $item['idOS'] ?? null,
+            'numOS' => $item['numOS'] ?? null,
             'parceiro' => [
                 'codigo' => $item['CODPARC'] ?? null,
                 'razaoSocial' => $item['PrazaoSocial'] ?? null,
@@ -234,7 +251,11 @@ class CertificadoController extends Controller {
     public function getCertificados(Request $request)
     {
         $idCliente = (int) $request->query('idCliente');
-        $idOs = $request->query('idOs');
+        $idOS = $request->query('idOS');
+
+        if (empty($idCliente)) {
+            return response()->json(['error' => 'idCliente é obrigatório'], 400);
+        }
 
         $whereConditions = [];
         
@@ -242,20 +263,20 @@ class CertificadoController extends Controller {
             $whereConditions[] = "OSE.CODPARC = {$idCliente}";
         }
         
-        if (!empty($idOs)) {
-            $whereConditions[] = "OSE.NUMOSNIKKEY = '{$idOs}'";
+        if (!empty($idOS)) {
+            $whereConditions[] = "OSE.NUMOSNIKKEY = '{$idOS}'";
         }
         
         if (empty($whereConditions)) {
-            return response()->json(['error' => 'É necessário informar idCliente ou idOs'], 400);
+            return response()->json(['error' => 'É necessário informar idCliente ou idOS'], 400);
         }
         
         $whereClause = "WHERE " . implode(" AND ", $whereConditions);
 
         $sql = "
         SELECT
-            OSE.NUMOS AS idOs,
-            OSE.NUMOSNIKKEY AS numOs,
+            OSE.NUMOS AS idOS,
+            OSE.NUMOSNIKKEY AS numOS,
             NULL AS validadeContrato
         FROM sankhya.AD_VGFOSE OSE
         INNER JOIN sankhya.TCSOSE TOS
