@@ -46,7 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/ordens-servico', [OrdemServicoController::class, 'index']);
     Route::get('/ordens-servico/{id}', [OrdemServicoController::class, 'getById']);
-    Route::get('/ordens-servico/imprimir/{id}', [OrdemServicoController::class, 'imprimirOS']);
 
     Route::get('/relatorios-produtividade', [RelatorioProdutividadeController::class, 'index']);
 
