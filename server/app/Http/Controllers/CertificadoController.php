@@ -148,7 +148,56 @@ class DashboardAdminController extends Controller {
         $result = $service->fetchAll($sql);
         $result = $service->mapDbExplorerResult($result);
 
-        return response()->json($result[0] ?? null);
-        return $result;
+        $formatted = [];
+        
+        foreach ($data as $item) {
+            $formatted[] = [
+                'idOs' => $item['IDOS'] ?? null,
+                'numOs' => $item['NUMOS'] ?? null,
+                'parceiro' => [
+                    'codigo' => $item['CODPARC'] ?? null,
+                    'razaoSocial' => $item['PRAZAOSOCIAL'] ?? null,
+                    'nomeFantasia' => $item['PNOMEFANTASIA'] ?? null,
+                    'cpfCnpj' => $item['PCPFCNPJ'] ?? null,
+                    'logradouro' => $item['PLOGRADOURO'] ?? null,
+                    'numero' => $item['PNUMERO'] ?? null,
+                    'bairro' => $item['PBAIRRO'] ?? null,
+                    'cidade' => $item['PCIDADE'] ?? null,
+                    'complemento' => $item['PCOMPLEMENTO'] ?? null,
+                    'cep' => $item['PCEP'] ?? null,
+                    'estado' => $item['PESTADO'] ?? null,
+                ],
+                'certificado' => [
+                    'validadeContrato' => $item['VALIDADECONTRATO'] ?? null,
+                    'licencaFuncionamento' => $item['LICENCAFUNCIONAMENTO'] ?? null,
+                    'dataValidadeLicenca' => $item['DATAVALIDADELICENCA'] ?? null,
+                    'dataInicioValidade' => $item['DATAINICIOVALIDADECERTIFICADO'] ?? null,
+                    'dataFimValidade' => $item['DATAFIMVALIDADECERTIFICADO'] ?? null,
+                ],
+                'nikkey' => [
+                    'razaoSocial' => $item['RAZAOSOCIAL'] ?? null,
+                    'nomeFantasia' => $item['NOMEFANTASIA'] ?? null,
+                    'cpfCnpj' => $item['CPFCNPJ'] ?? null,
+                    'logradouro' => $item['LOGRADOURO'] ?? null,
+                    'numero' => $item['NUMERO'] ?? null,
+                    'bairro' => $item['BAIRRO'] ?? null,
+                    'cidade' => $item['CIDADE'] ?? null,
+                    'complemento' => $item['COMPLEMENTO'] ?? null,
+                    'cep' => $item['CEP'] ?? null,
+                    'estado' => $item['ESTADO'] ?? null,
+                    'telefone' => $item['TELEFONE'] ?? null,
+                ],
+                'responsavelTecnico' => [
+                    'razaoSocial' => $item['TRAZAOSOCIAL'] ?? null,
+                    'nomeFantasia' => $item['TNOMEFANTASIA'] ?? null,
+                    'cpfCnpj' => $item['CPFCNPJ_1'] ?? null,
+                    'nomeConselho' => $item['NOMECONSELHO'] ?? null,
+                    'numeroConselho' => $item['NUMEROCONSELHO'] ?? null,
+                    'imagemAssinatura' => $item['IMAGEMASSINATURA'] ?? null,
+                ]
+            ];
+        }
+
+        return response()->json($result ?? null);
     }
 }
