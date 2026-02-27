@@ -218,6 +218,23 @@ class CertificadoController extends Controller {
     public function getCertificados(Request $request)
     {
         $idCliente = (int) $request->query('idCliente');
+        $idOs = $request->query('idOs');
+
+        $whereConditions = [];
+        
+        if ($idCliente > 0) {
+            $whereConditions[] = "OSE.CODPARC = {$idCliente}";
+        }
+        
+        if (!empty($idOs)) {
+            $whereConditions[] = "OSE.NUMOSNIKKEY = '{$idOs}'";
+        }
+        
+        if (empty($whereConditions)) {
+            return response()->json(['error' => 'É necessário informar idCliente ou idOs'], 400);
+        }
+        
+        $whereClause = "WHERE " . implode(" AND ", $whereConditions);
 
         $sql = "
         SELECT
@@ -240,13 +257,13 @@ class CertificadoController extends Controller {
                 WHERE I.NUNOTA = ITE.NUNOTA
                 AND I.AD_DT_GARRANTIA IS NOT NULL
             )
-        WHERE OSE.CODPARC = {$idCliente}
+        {$whereClause}
         ";
 
         $service = new SankhyaDbExplorerSPService();
         $result = $service->fetchAll($sql);
         $result = $service->mapDbExplorerResult($result);
 
-        return response()->json($result ?? null);
+        return response()->json($result ?? []);
     }
 }
