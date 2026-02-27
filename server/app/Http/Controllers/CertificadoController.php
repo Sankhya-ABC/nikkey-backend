@@ -40,12 +40,7 @@ class CertificadoController extends Controller {
             return response()->json(['error' => 'idCliente é obrigatório'], 400);
         }
 
-        $whereConditions = ["OSE.NUMOS = '{$idOS}'"];
-        
-        if ($idCliente > 0) {
-            $whereConditions[] = "OSE.CODPARC = {$idCliente}";
-        }
-        
+        $whereConditions = ["OSE.NUMOS = '{$idOS}'", "OSE.CODPARC = {$idCliente}"];
         $whereClause = "WHERE " . implode(" AND ", $whereConditions);
 
         $sql = "
@@ -183,15 +178,15 @@ class CertificadoController extends Controller {
         $result = $service->fetchAll($sql);
         
         if (empty($result)) {
-            return response()->json(['error' => 'Certificado não encontrado'], 404);
+            return response()->json(['error' => 'Certificado não encontrado para este cliente'], 404);
         }
-        
         $mappedResult = $service->mapDbExplorerResult($result);
-        $item = $mappedResult[0];
 
-        if ($idCliente > 0 && ($item['CODPARC'] ?? 0) != $idCliente) {
-            return response()->json(['error' => 'Certificado não pertence ao cliente informado'], 403);
+        if (empty($mappedResult)) {
+            return response()->json([]);
         }
+
+        $item = $mappedResult[0];
 
         $formatted = [
             'idOS' => $item['idOS'] ?? null,
