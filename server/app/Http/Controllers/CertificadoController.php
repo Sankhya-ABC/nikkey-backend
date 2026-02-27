@@ -17,7 +17,7 @@ class DashboardAdminController extends Controller {
         SELECT
         OSE.NUMOS AS idOs,
         OSE.NUMOSNIKKEY AS numOs,
-        -->> // cliente <<--
+
         OSE.CODPARC,
         PAR.RAZAOSOCIAL AS PrazaoSocial,     
         PAR.NOMEPARC AS PnomeFantasia,
@@ -43,13 +43,13 @@ class DashboardAdminController extends Controller {
         PAR.COMPLEMENTO AS Pcomplemento,
         STUFF(PAR.CEP, 6, 0, '-') AS Pcep,
         PUF.UF AS Pestado,
-        -->> // certificado <<--
+
         NULL AS validadeContrato,
         NULL AS licencaFuncionamento,
         NULL AS dataValidadeLicenca,
         CONVERT(VARCHAR(10), ITE.AD_DT_GARRANTIA, 103) AS dataInicioValidadeCertificado,
         CONVERT(VARCHAR(10), DATEADD(DAY, ITE.AD_DIASGARANTIA, ITE.AD_DT_GARRANTIA), 103) AS dataFimValidadeCertificado,
-        -->> // nikkey <<--
+
         EMP.RAZAOSOCIAL AS razaoSocial,
         EMP.NOMEFANTASIA AS nomeFantasia,
         STUFF(
@@ -67,7 +67,7 @@ class DashboardAdminController extends Controller {
         STUFF(EMP.CEP, 6, 0, '-') AS cep,
         UFS.UF AS estado,
         EMP.TELEFONE AS telefone,
-        -->> // responsável técnico <<--
+
         VEN.APELIDO AS TrazaoSocial,
         VEN.APELIDO AS TnomeFantasia,
         NULL AS cpfCnpj,
@@ -98,50 +98,50 @@ class DashboardAdminController extends Controller {
                 END
         END AS numeroConselho,
         TUS.AD_ASSINATURA AS imagemAssinatura
-    FROM sankhya.AD_VGFOSE OSE
-    INNER JOIN sankhya.TCSOSE TOS
-        ON TOS.NUMOS = OSE.NUMOS 
-    INNER JOIN sankhya.TGFCAB CAB
-        ON CAB.NUNOTA = TOS.NUNOTA
-    INNER JOIN sankhya.TGFITE ITE
-        ON ITE.NUNOTA = CAB.NUNOTA
-        AND ITE.CODPROD = (
-            SELECT TOP 1 I.CODPROD
-            FROM sankhya.TGFITE I
-            INNER JOIN sankhya.TGFPRO P
-                ON P.CODPROD = I.CODPROD
-                AND P.AD_APP = 'S'
-            WHERE I.NUNOTA = ITE.NUNOTA
-            AND I.AD_DT_GARRANTIA IS NOT NULL
-        )
-    -->> EMPRESA <<--
-    INNER JOIN sankhya.TSIEMP EMP
-        ON EMP.CODEMP = CAB.CODEMP
-    INNER JOIN sankhya.TSIEND EDE
-        ON EDE.CODEND = EMP.CODEND
-    INNER JOIN sankhya.TSIBAI BAI
-        ON BAI.CODBAI = EMP.CODBAI
-    INNER JOIN sankhya.TSICID CID
-        ON CID.CODCID = EMP.CODCID
-    INNER JOIN sankhya.TSIUFS UFS
-        ON UFS.CODUF = CID.UF
-    -->> PARCEIRO <<--
-    INNER JOIN sankhya.TGFPAR PAR
-        ON PAR.CODPARC = OSE.CODPARC
-    INNER JOIN sankhya.TSIEND PEN
-        ON PEN.CODEND = PAR.CODEND
-    INNER JOIN sankhya.TSIBAI PBA
-        ON PBA.CODBAI = PAR.CODBAI
-    INNER JOIN sankhya.TSICID PCI
-        ON PCI.CODCID = PAR.CODCID
-    INNER JOIN sankhya.TSIUFS PUF
-        ON PUF.CODUF = PCI.UF
-    -->> RESP. TÉCNICO <<--
-    LEFT JOIN sankhya.TGFVEN VEN
-        ON VEN.CODVEND = CAB.AD_CODVEND
-    LEFT JOIN sankhya.TSIUSU TUS
-        ON TUS.CODVEND = VEN.CODVEND
-    WHERE OSE.NUMOS = OSE.NUMOS
+        FROM sankhya.AD_VGFOSE OSE
+        INNER JOIN sankhya.TCSOSE TOS
+            ON TOS.NUMOS = OSE.NUMOS 
+        INNER JOIN sankhya.TGFCAB CAB
+            ON CAB.NUNOTA = TOS.NUNOTA
+        INNER JOIN sankhya.TGFITE ITE
+            ON ITE.NUNOTA = CAB.NUNOTA
+            AND ITE.CODPROD = (
+                SELECT TOP 1 I.CODPROD
+                FROM sankhya.TGFITE I
+                INNER JOIN sankhya.TGFPRO P
+                    ON P.CODPROD = I.CODPROD
+                    AND P.AD_APP = 'S'
+                WHERE I.NUNOTA = ITE.NUNOTA
+                AND I.AD_DT_GARRANTIA IS NOT NULL
+            )
+
+            INNER JOIN sankhya.TSIEMP EMP
+            ON EMP.CODEMP = CAB.CODEMP
+        INNER JOIN sankhya.TSIEND EDE
+            ON EDE.CODEND = EMP.CODEND
+        INNER JOIN sankhya.TSIBAI BAI
+            ON BAI.CODBAI = EMP.CODBAI
+        INNER JOIN sankhya.TSICID CID
+            ON CID.CODCID = EMP.CODCID
+        INNER JOIN sankhya.TSIUFS UFS
+            ON UFS.CODUF = CID.UF
+
+            INNER JOIN sankhya.TGFPAR PAR
+            ON PAR.CODPARC = OSE.CODPARC
+        INNER JOIN sankhya.TSIEND PEN
+            ON PEN.CODEND = PAR.CODEND
+        INNER JOIN sankhya.TSIBAI PBA
+            ON PBA.CODBAI = PAR.CODBAI
+        INNER JOIN sankhya.TSICID PCI
+            ON PCI.CODCID = PAR.CODCID
+        INNER JOIN sankhya.TSIUFS PUF
+            ON PUF.CODUF = PCI.UF
+
+            LEFT JOIN sankhya.TGFVEN VEN
+            ON VEN.CODVEND = CAB.AD_CODVEND
+        LEFT JOIN sankhya.TSIUSU TUS
+            ON TUS.CODVEND = VEN.CODVEND
+        WHERE OSE.NUMOS = OSE.NUMOS
         ";
 
         $service = new SankhyaDbExplorerSPService();
