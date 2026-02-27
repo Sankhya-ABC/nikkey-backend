@@ -253,22 +253,14 @@ class CertificadoController extends Controller {
         $idCliente = (int) $request->query('idCliente');
         $idOS = $request->query('idOS');
 
-        if (empty($idCliente)) {
-            return response()->json(['error' => 'idCliente é obrigatório'], 400);
+        if ($idCliente <= 0) {
+            return response()->json(['error' => 'idCliente é obrigatório e deve ser um número válido'], 400);
         }
 
-        $whereConditions = [];
-        
-        if ($idCliente > 0) {
-            $whereConditions[] = "OSE.CODPARC = {$idCliente}";
-        }
+        $whereConditions = ["OSE.CODPARC = {$idCliente}"];
         
         if (!empty($idOS)) {
-            $whereConditions[] = "OSE.NUMOSNIKKEY = '{$idOS}'";
-        }
-        
-        if (empty($whereConditions)) {
-            return response()->json(['error' => 'É necessário informar idCliente ou idOS'], 400);
+            $whereConditions[] = "OSE.NUMOS = '{$idOS}'";
         }
         
         $whereClause = "WHERE " . implode(" AND ", $whereConditions);
