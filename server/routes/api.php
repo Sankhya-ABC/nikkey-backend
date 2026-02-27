@@ -88,5 +88,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/visitas', [VisitaController::class, 'getVisitas']);
     Route::get('/cronograma-visita', [VisitaController::class, 'getCronogramaVisita']);
 
-    Route::get('/certificados', [CertificadoController::class, 'getCronogramaVisita']);
+    Route::get('/certificados', [CertificadoController::class, 'getCertificados']);
 });

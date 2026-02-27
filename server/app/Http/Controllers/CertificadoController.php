@@ -168,7 +168,7 @@ class CertificadoController extends Controller {
 
         $formatted = [];
         
-        foreach ($data as $item) {
+        foreach ($result as $item) {
             $formatted[] = [
                 'idOs' => $item['idOs'] ?? null,
                 'numOs' => $item['numOs'] ?? null,
