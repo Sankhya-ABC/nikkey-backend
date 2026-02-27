@@ -14,7 +14,8 @@ class RelatorioProdutividadeController extends Controller
         $page       = (int) $request->query('page', 1);
         $dataInicio = $request->query('dataInicio');
         $dataFim    = $request->query('dataFim');
-        $idCliente  = $request->query('idCliente'); 
+        $idCliente  = $request->query('idCliente');
+        $search     = $request->query('search');
 
         if (!$dataInicio || !$dataFim) {
             return response()->json([
@@ -30,7 +31,16 @@ class RelatorioProdutividadeController extends Controller
 
         $query = VisibilityPolicy::apply($user, $query, 'cliente_id', $idCliente);
 
-        $relatorio = $query->get()
+        $ordensServico = $query->get();
+
+        if (!empty($search)) {
+            $ordensServico = $ordensServico->filter(function ($os) use ($search) {
+                return $os->tecnico && 
+                       stripos($os->tecnico->nome, $search) !== false;
+            });
+        }
+
+        $relatorio = $ordensServico
             ->groupBy(fn($os) => $os->tecnico?->id)
             ->map(fn($osGroup, $tecnicoId) => $this->toVO($osGroup, $tecnicoId))
             ->values();
