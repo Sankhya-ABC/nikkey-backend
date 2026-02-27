@@ -14,6 +14,7 @@ use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\DashboardCommonController;
 use App\Http\Controllers\RelatorioCommonController;
 use App\Http\Controllers\VisitaController;
+use App\Http\Controllers\CertificadoController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -86,4 +87,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/visitas', [VisitaController::class, 'getVisitas']);
     Route::get('/cronograma-visita', [VisitaController::class, 'getCronogramaVisita']);
+
+    Route::get('/certificados', [CertificadoController::class, 'getCronogramaVisita']);
 });

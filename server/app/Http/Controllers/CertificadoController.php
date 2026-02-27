@@ -8,7 +8,25 @@ use App\Services\Sankhya\AuthSankhya;
 use App\Services\Sankhya\SankhyaLoadRecordsService;
 use App\Services\Sankhya\SankhyaDbExplorerSPService;
 
-class DashboardAdminController extends Controller {
+class CertificadoController extends Controller {
+    private function hexToBase64(?string $hex): ?string
+    {
+        if (empty($hex)) {
+            return null;
+        }
+        
+        $hex = preg_replace('/\s+/', '', $hex);
+        $hex = str_replace('0x', '', $hex);
+        
+        $binary = hex2bin($hex);
+        
+        if ($binary === false) {
+            return null;
+        }
+        
+        return base64_encode($binary);
+    }
+
     public function getCertificados(Request $request)
     {
         $idCliente = (int) $request->query('idCliente');
@@ -190,10 +208,10 @@ class DashboardAdminController extends Controller {
                 'responsavelTecnico' => [
                     'razaoSocial' => $item['TrazaoSocial'] ?? null,
                     'nomeFantasia' => $item['TnomeFantasia'] ?? null,
-                    'cpfCnpj' => $item['cpfCnpj'] ?? null, // Este é o NULL do responsável técnico
+                    'cpfCnpj' => $item['cpfCnpj'] ?? null,
                     'nomeConselho' => $item['nomeConselho'] ?? null,
                     'numeroConselho' => $item['numeroConselho'] ?? null,
-                    'imagemAssinatura' => $item['imagemAssinatura'] ?? null,
+                    'imagemAssinatura' => $this->hexToBase64($item['imagemAssinatura'] ?? null),
                 ]
             ];
         }
