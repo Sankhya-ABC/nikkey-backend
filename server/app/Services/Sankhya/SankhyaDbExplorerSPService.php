@@ -42,37 +42,32 @@ class SankhyaDbExplorerSPService
         }, $rows);
     }
 
-    public function fetchAll(string $sql): array
+  public function fetchAll(string $sql): array
     {
-        $cacheKey = 'sankhya_dbexplorer_' . md5($sql);
+        $token = (new AuthSankhya())->login();
 
-        return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($sql) {
+        if (!$token) {
+            throw new \Exception('Falha ao autenticar no Sankhya');
+        }
 
-            $token = (new AuthSankhya())->login();
+        $body = [
+            'serviceName' => 'DbExplorerSP.executeQuery',
+            'requestBody' => [
+                'sql' => $sql
+            ]
+        ];
 
-            if (!$token) {
-                throw new \Exception('Falha ao autenticar no Sankhya');
-            }
+        $response = $this->client->post(
+            rtrim($this->gateway, '/') . '/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json',
+            [
+                'headers' => [
+                    'Authorization' => "Bearer {$token}",
+                    'Accept' => 'application/json',
+                ],
+                'json' => $body
+            ]
+        );
 
-            $body = [
-                'serviceName' => 'DbExplorerSP.executeQuery',
-                'requestBody' => [
-                    'sql' => $sql
-                ]
-            ];
-
-            $response = $this->client->post(
-                rtrim($this->gateway, '/') . '/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json',
-                [
-                    'headers' => [
-                        'Authorization' => "Bearer {$token}",
-                        'Accept' => 'application/json',
-                    ],
-                    'json' => $body
-                ]
-            );
-
-            return json_decode($response->getBody()->getContents(), true);
-        });
+        return json_decode($response->getBody()->getContents(), true);
     }
 }
