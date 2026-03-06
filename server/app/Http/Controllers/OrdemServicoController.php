@@ -21,40 +21,55 @@ class OrdemServicoController extends Controller
             OSE.AD_NUMNIKKEY,
             OSE.NUMOS           AS idOs,
             OSE.NUMOSNIKKEY     AS numOs,
+
             CAB.CODEMP          AS idEmpresa,
             EMP.NOMEFANTASIA    AS nomeEmpresa,
             EMP.AD_ALVARAVIG    AS alvara,
-            AD_ALVARAVIGDTVAL   AS vencimentoAlvara,
-            EMP.RAZAOSOCIAL     AS razaoSocial,
-            EMP.NOMEFANTASIA    AS nomeFantasia,
-            CONCAT(EDE.TIPO,' ',EDE.NOMEEND)    AS logradouro,
-            EMP.NUMEND          AS numero,
+            EMP.AD_ALVARAVIGDTVAL AS vencimentoAlvara,
+
+            PAR.RAZAOSOCIAL     AS razaoSocial,
+            PAR.NOMEPARC        AS nomeFantasia,
+            CONCAT(EDE.TIPO,' ',EDE.NOMEEND) AS logradouro,
+            PAR.NUMEND          AS numero,
             BAI.NOMEBAI         AS bairro,
             CID.NOMECID         AS cidade,
-            EMP.COMPLEMENTO     AS complemento,
-            STUFF(EMP.CEP, 6, 0, '-')   AS cep,
+            PAR.COMPLEMENTO     AS complemento,
+            STUFF(PAR.CEP, 6, 0, '-') AS cep,
             UFS.UF              AS estado,
+            
             OSE.CODTEC          AS idTecnico,
             OSE.NOMETEC         AS nomeTecnico,
-            CONVERT(VARCHAR(10), OSE.HRFIN, 103)    AS dataVisita,
-            CONVERT(VARCHAR(5), OSE.HRINI, 108)     AS horaInicio,
-            CONVERT(VARCHAR(5), OSE.HRFIN, 108)     AS horaFim
-
+            CONVERT(VARCHAR(10), OSE.HRFIN, 103) AS dataVisita,
+            CONVERT(VARCHAR(5), OSE.HRINI, 108)  AS horaInicio,
+            CONVERT(VARCHAR(5), OSE.HRFIN, 108)  AS horaFim
 
         FROM sankhya.AD_VGFOSE OSE
+
         INNER JOIN sankhya.TGFCAB CAB
             ON CAB.AD_NUMNIKKEY = OSE.AD_NUMNIKKEY
-            AND CAB.NUNOTA      = (SELECT MIN(C.NUNOTA) FROM sankhya.TGFCAB C WHERE C.AD_NUMNIKKEY = CAB.AD_NUMNIKKEY)
+            AND CAB.NUNOTA = (
+                SELECT MIN(C.NUNOTA)
+                FROM sankhya.TGFCAB C
+                WHERE C.AD_NUMNIKKEY = CAB.AD_NUMNIKKEY
+            )
+
         INNER JOIN sankhya.TSIEMP EMP
-            ON EMP.CODEMP       = CAB.CODEMP
+            ON EMP.CODEMP = CAB.CODEMP
+
+        INNER JOIN sankhya.TGFPAR PAR
+            ON PAR.CODPARC = CAB.CODPARC
+
         INNER JOIN sankhya.TSIEND EDE
-            ON EDE.CODEND       = EMP.CODEND
+            ON EDE.CODEND = PAR.CODEND
+
         INNER JOIN sankhya.TSIBAI BAI
-            ON BAI.CODBAI       = EMP.CODBAI
+            ON BAI.CODBAI = PAR.CODBAI
+
         INNER JOIN sankhya.TSICID CID
-            ON CID.CODCID       = EMP.CODCID
+            ON CID.CODCID = PAR.CODCID
+
         INNER JOIN sankhya.TSIUFS UFS
-            ON UFS.CODUF        = CID.UF
+            ON UFS.CODUF = CID.UF
 
         WHERE OSE.NUMOS = {$id}
         ";
