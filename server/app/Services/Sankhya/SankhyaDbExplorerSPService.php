@@ -46,7 +46,7 @@ class SankhyaDbExplorerSPService
     {
         $cacheKey = 'sankhya_dbexplorer_' . md5($sql);
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($sql) {
+        return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($sql) {
 
             $token = (new AuthSankhya())->login();
 
