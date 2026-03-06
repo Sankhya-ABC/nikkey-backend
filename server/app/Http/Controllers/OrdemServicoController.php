@@ -66,7 +66,7 @@ class OrdemServicoController extends Controller
         return response()->json($result);
     }
 
-    public function index(Request $request)
+   public function index(Request $request)
     {
         $perPage    = (int) $request->query('per_page', 15);
         $page       = (int) $request->query('page', 1);
@@ -84,17 +84,19 @@ class OrdemServicoController extends Controller
         $user = $request->user();
 
         $query = OrdemServico::with(['tecnico', 'cliente'])
-            ->whereDate('hrini', '>=', $dataInicio)
-            ->whereDate('hrini', '<=', $dataFim);
+            ->where(function ($q) use ($dataInicio, $dataFim) {
+                $q->whereBetween('hrini', [$dataInicio, $dataFim])
+                ->orWhereNull('hrini');
+            });
 
         $query = VisibilityPolicy::apply($user, $query, 'cliente_id', $idCliente);
 
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('numos', 'LIKE', "%{$search}%")
-                  ->orWhereHas('tecnico', function ($t) use ($search) {
-                      $t->where('nome', 'LIKE', "%{$search}%");
-                  });
+                ->orWhereHas('tecnico', function ($t) use ($search) {
+                    $t->where('nome', 'LIKE', "%{$search}%");
+                });
             });
         }
 
