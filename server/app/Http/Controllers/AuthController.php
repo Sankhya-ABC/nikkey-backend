@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Helpers\UserMapper;
 
 class AuthController extends Controller
 {
@@ -30,12 +31,12 @@ class AuthController extends Controller
         $token = $user->createToken('api_token')->plainTextToken;
         $expirationMinutes = config('sanctum.expiration');
 
-        $user = User::with(['tipoUsuario', 'departamento'])
+        $user = User::with(['tipoUsuario', 'departamento', 'cliente'])
             ->findOrFail($user->id);
 
         return response()->json([
             'message' => 'Login realizado com sucesso',
-            'user' => $this->toVO($user),
+            'user' => UserMapper::toVO($user),
             'token' => $token,
             'expires_in' => $expirationMinutes
         ]);
@@ -47,13 +48,13 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user()
-            ->load(['tipoUsuario', 'departamento']);
+            ->load(['tipoUsuario', 'departamento', 'cliente']);
 
         return response()->json(
-            $this->toVO($user)
+            UserMapper::toVO($user)
         );
     }
-
+    
     /**
      * Logout
      */
