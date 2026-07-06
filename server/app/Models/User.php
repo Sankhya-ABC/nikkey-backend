@@ -42,4 +42,14 @@ class User extends Authenticatable
         return $this->belongsTo(Departamento::class, 'departamento_id');
     }
 
+    public function isCommon(): bool
+    {
+        return strtoupper($this->tipoUsuario->descricao ?? '') === 'COMMON';
+    }
+
+    public function isAdmin(): bool
+    {
+        return strtoupper($this->tipoUsuario->descricao ?? '') === 'ADMIN';
+    }
+
 }

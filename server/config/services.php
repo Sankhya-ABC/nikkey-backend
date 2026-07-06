@@ -26,8 +26,17 @@ return [
     ],
 
     'ses' => [
-        'key' => env('AWS_ACCESS_KEY_ID'),
+        'key'    => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-    ]
+    ],
+
+    'sankhya' => [
+        'host'          => env('SNK_HOST'),
+        'gateway'       => env('SNK_GATEWAY'),
+        'client_id'     => env('SNK_CLIENT_ID'),
+        'client_secret' => env('SNK_CLIENT_SECRET'),
+        'x_token'       => env('SNK_X_TOKEN'),
+        'token_ttl'     => env('SNK_TOKEN_TTL', 240),
+    ],
 ];

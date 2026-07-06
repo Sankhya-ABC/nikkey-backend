@@ -11,24 +11,33 @@ class SankhyaSyncAll extends Command
 
     public function handle()
     {
-        $this->call('sankhya:buscar-tipo-equipamento');
-        $this->call('sankhya:buscar-tecnica-execucao');
-        $this->call('sankhya:buscar-servicos');
-        $this->call('sankhya:buscar-produtos');
-        $this->call('sankhya:buscar-pragas');
-        $this->call('sankhya:buscar-metodologias');
-        $this->call('sankhya:buscar-clientes');
-        $this->call('sankhya:buscar-tipos-evidencia');
-        $this->call('sankhya:buscar-ambientes');
+        $this->call('sankhya:sync-tipos-equipamento');
+        $this->call('sankhya:sync-tecnicas-execucao');
+        $this->call('sankhya:sync-servicos');
+        $this->call('sankhya:sync-produtos');
+        $this->call('sankhya:sync-pragas');
+        $this->call('sankhya:sync-metodologias');
+        $this->call('sankhya:sync-clientes');
+        $this->call('sankhya:sync-tipos-evidencia');
+        $this->call('sankhya:sync-ambientes');
 
-        $this->call('sankhya:buscar-os');
-        $this->call('sankhya:buscar-previsoes-execucao');
-        $this->call('sankhya:buscar-os-ambientes');
+        $this->call('sankhya:sync-os');
+        $this->call('sankhya:sync-previsoes-execucao');
+        $this->call('sankhya:sync-os-ambientes');
 
-        $this->call('sankhya:buscar-produtos-previstos');
-        $this->call('sankhya:buscar-produtos-utilizados');
-        $this->call('sankhya:buscar-evidencias-pragas');
+        $this->call('sankhya:sync-produtos-previstos');
+        $this->call('sankhya:sync-produtos-utilizados');
+        $this->call('sankhya:sync-evidencias-pragas');
 
-        $this->info('Sincronização completa!');
+        $this->call('sankhya:sync-tipos-nao-conformidade');
+        $this->call('sankhya:sync-nao-conformidades');
+        $this->call('sankhya:sync-pontos-monitoramento');
+
+        $this->call('sankhya:sync-empresas');
+        $this->call('sankhya:sync-tecnicos');
+        $this->call('sankhya:sync-certificados');
+
+        $this->info('Sincronizacao completa!');
     }
 }
+

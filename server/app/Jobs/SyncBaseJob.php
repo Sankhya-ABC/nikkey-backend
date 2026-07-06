@@ -8,7 +8,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use App\Services\Sankhya\AuthSankhya;
+use App\Services\Sankhya\SankhyaAuthService;
 use App\Services\Sankhya\SankhyaLoadRecordsService;
 
 abstract class SyncBaseJob implements ShouldQueue
@@ -31,7 +31,7 @@ abstract class SyncBaseJob implements ShouldQueue
     {
         $this->beforeRun();
 
-        $token = (new AuthSankhya())->login();
+        $token = (new SankhyaAuthService())->login();
         if (!$token) {
             Log::error("Falha ao autenticar no Sankhya para " . static::class);
             return;
@@ -67,3 +67,4 @@ abstract class SyncBaseJob implements ShouldQueue
     protected function beforeRun(): void {}
     protected function afterRun(): void {}
 }
+

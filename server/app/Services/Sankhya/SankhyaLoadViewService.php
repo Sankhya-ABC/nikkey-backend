@@ -14,7 +14,7 @@ class SankhyaLoadViewService
     public function __construct()
     {
         $this->client = new Client(['verify' => false, 'timeout' => 120]);
-        $this->gateway = env('SNK_GATEWAY');
+        $this->gateway = config('services.sankhya.gateway');
     }
 
     public function fetchPaginated(

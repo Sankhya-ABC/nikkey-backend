@@ -9,7 +9,7 @@ class Tecnico extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nome', 'codtec_snk'];
+    protected $fillable = ['nome', 'codtec_snk', 'telefone', 'crea', 'crbio', 'assinatura', 'codvend_snk'];
 
     public function ordensServico()
     {

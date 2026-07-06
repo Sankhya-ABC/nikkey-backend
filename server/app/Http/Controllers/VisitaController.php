@@ -3,66 +3,58 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Services\Sankhya\AuthSankhya;
-use App\Services\Sankhya\SankhyaLoadRecordsService;
-use App\Services\Sankhya\SankhyaDbExplorerSPService;
 
-class VisitaController extends Controller {
+class VisitaController extends Controller
+{
     public function getVisitas(Request $request)
     {
-        $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay();
-        $dataFim = Carbon::parse($request->query('dataFim'))->startOfDay();
+        $dataInicio = Carbon::parse($request->query('dataInicio'))->startOfDay()->toDateString();
+        $dataFim    = Carbon::parse($request->query('dataFim'))->startOfDay()->toDateString();
 
-        $sql = "
-            SELECT 
-                OSE.NUMOSNIKKEY AS idVisita,
-                OSE.CODPARC AS idEmpresa,
-                PAR.RAZAOSOCIAL AS nomeEmpresa,
-                OSE.CODTEC AS idTecnico,
-                OSE.NOMETEC AS nomeTecnico,    
-                CONVERT(VARCHAR(10), ISNULL(OSE.HRFIN,OSE.DHPREVISTA), 103) AS data,
-                CONVERT(VARCHAR(8), ISNULL(OSE.HRINI,OSE.DHPREVISTA), 108) AS horaInicio,
-                CONVERT(VARCHAR(8), ISNULL(OSE.HRFIN,OSE.DHPREVISTAFIN), 108) AS horaFim
-            FROM sankhya.AD_VGFOSE OSE
-            INNER JOIN sankhya.TGFPAR PAR
-                ON PAR.CODPARC = OSE.CODPARC
-            WHERE CAST(OSE.DHPREVISTA AS date) BETWEEN '{$dataInicio}' AND '{$dataFim}'
-            AND CAST(OSE.DHPREVISTA AS date)  IS NOT NULL
-            ORDER BY 
-                CONVERT(VARCHAR(10), ISNULL(OSE.HRFIN,OSE.DHPREVISTA), 103),
-                CONVERT(VARCHAR(8), ISNULL(OSE.HRINI,OSE.DHPREVISTA), 108),
-                OSE.NUMOS
-        ";
-
-        $service = new SankhyaDbExplorerSPService();
-        $result = $service->fetchAll($sql);
-        $result = $service->mapDbExplorerResult($result);
+        $rows = DB::select("
+            SELECT
+                os.numos                                                   AS idVisita,
+                c.codparc_snk                                              AS idEmpresa,
+                COALESCE(c.razao_social, c.nome_fantasia)                  AS nomeEmpresa,
+                t.codtec_snk                                               AS idTecnico,
+                t.nome                                                     AS nomeTecnico,
+                DATE(COALESCE(os.hrfin, os.dhprevista))                    AS data,
+                TIME(COALESCE(os.hrini, os.dhprevista))                    AS horaInicio,
+                TIME(COALESCE(os.hrfin, os.dhprevistafin))                 AS horaFim
+            FROM ordens_servico os
+            LEFT JOIN clientes c ON c.id = os.cliente_id
+            LEFT JOIN tecnicos t ON t.id = os.tecnico_id
+            WHERE DATE(os.dhprevista) BETWEEN ? AND ?
+              AND os.dhprevista IS NOT NULL
+            ORDER BY data, horaInicio, os.numos
+        ", [$dataInicio, $dataFim]);
 
         $result = array_map(function ($item) {
-            if (!empty($item['data'])) {
-                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $item['data'])) {
-                } else {
-                    try {
-                        $carbonDate = Carbon::createFromFormat('d/m/Y', $item['data']);
-                        $item['data'] = $carbonDate->format('Y-m-d');
-                    } catch (\Exception $e) {
-                        $carbonDate = Carbon::parse($item['data']);
-                        $item['data'] = $carbonDate->format('Y-m-d');
-                    }
+            $data = $item->data ?? null;
+            if ($data && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $data)) {
+                try {
+                    $data = Carbon::createFromFormat('d/m/Y', $data)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $data = Carbon::parse($data)->format('Y-m-d');
                 }
             }
-            
-            if (!empty($item['horaInicio'])) {
-                $item['horaInicio'] = Carbon::parse($item['horaInicio'])->format('H:i');
-            }
-            
-            if (!empty($item['horaFim'])) {
-                $item['horaFim'] = Carbon::parse($item['horaFim'])->format('H:i');
-            }
-            
-            return $item;
-        }, $result);
+
+            $horaInicio = $item->horaInicio ?? null;
+            $horaFim    = $item->horaFim    ?? null;
+
+            return [
+                'idVisita'    => $item->idVisita,
+                'idEmpresa'   => $item->idEmpresa,
+                'nomeEmpresa' => $item->nomeEmpresa,
+                'idTecnico'   => $item->idTecnico,
+                'nomeTecnico' => $item->nomeTecnico,
+                'data'        => $data,
+                'horaInicio'  => $horaInicio ? Carbon::parse($horaInicio)->format('H:i') : null,
+                'horaFim'     => $horaFim    ? Carbon::parse($horaFim)->format('H:i')    : null,
+            ];
+        }, $rows);
 
         return response()->json($result);
     }
@@ -71,34 +63,28 @@ class VisitaController extends Controller {
     {
         $nomeTecnico = $request->query('nomeTecnico');
 
-        $sql = "
-            SELECT
-                OSE.CODTEC AS idTecnico,
-                OSE.NOMETEC AS nomeTecnico,
-                CONVERT(VARCHAR(10), OSE.DHPREVISTA, 103) AS data,
-                CONVERT(VARCHAR(8), OSE.DHPREVISTA, 108) AS hora,
-                USU.AD_TELEFONE AS telefone,
-                OSE.STATUSOS AS status
-            FROM sankhya.AD_VGFOSE OSE
-            INNER JOIN sankhya.TSIUSU USU
-                ON USU.CODUSU = OSE.CODTEC
-            WHERE CAST(OSE.DHPREVISTA AS DATE) >= CAST(GETDATE() AS DATE)
-        ";
+        $params = [];
+        $where  = "WHERE DATE(os.dhprevista) >= CURDATE()";
 
         if (!empty($nomeTecnico)) {
-            $sql .= " AND UPPER(OSE.NOMETEC) LIKE UPPER('%{$nomeTecnico}%')";
+            $where   .= " AND UPPER(t.nome) LIKE UPPER(?)";
+            $params[] = "%{$nomeTecnico}%";
         }
 
-        $sql .= "
-            ORDER BY 
-                CONVERT(VARCHAR(10), OSE.DHPREVISTA, 103),
-                CONVERT(VARCHAR(8), OSE.DHPREVISTA, 108)
-        ";
+        $rows = DB::select("
+            SELECT
+                t.codtec_snk   AS idTecnico,
+                t.nome         AS nomeTecnico,
+                DATE(os.dhprevista) AS data,
+                TIME(os.dhprevista) AS hora,
+                t.telefone     AS telefone,
+                os.statusos    AS status
+            FROM ordens_servico os
+            LEFT JOIN tecnicos t ON t.id = os.tecnico_id
+            {$where}
+            ORDER BY DATE(os.dhprevista), TIME(os.dhprevista)
+        ", $params);
 
-        $service = new SankhyaDbExplorerSPService();
-        $result = $service->fetchAll($sql);
-        $result = $service->mapDbExplorerResult($result);
-
-        return response()->json($result);
+        return response()->json(array_map(fn($r) => (array) $r, $rows));
     }
 }

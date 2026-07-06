@@ -3,26 +3,21 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Repositories\Contracts\DashboardAdminRepositoryInterface;
+use App\Repositories\Contracts\DashboardClienteRepositoryInterface;
+use App\Repositories\Contracts\RelatorioClienteRepositoryInterface;
+use App\Repositories\Local\DashboardAdminLocalRepository;
+use App\Repositories\Local\DashboardClienteLocalRepository;
+use App\Repositories\Local\RelatorioClienteLocalRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     *
-     * @return void
-     */
-    public function register()
+    public function register(): void
     {
-        //
+        $this->app->bind(DashboardAdminRepositoryInterface::class, DashboardAdminLocalRepository::class);
+        $this->app->bind(DashboardClienteRepositoryInterface::class, DashboardClienteLocalRepository::class);
+        $this->app->bind(RelatorioClienteRepositoryInterface::class, RelatorioClienteLocalRepository::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     *
-     * @return void
-     */
-    public function boot()
-    {
-        //
-    }
+    public function boot(): void {}
 }

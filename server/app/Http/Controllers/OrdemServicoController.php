@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrdemServico;
+use App\Models\Empresa;
+use App\Models\Certificado;
 use Illuminate\Http\Request;
 use App\Policies\VisibilityPolicy;
 use App\Models\Individuo;
-use App\Services\Sankhya\SankhyaDbExplorerSPService;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrdemServicoController extends Controller
 {
@@ -15,70 +15,45 @@ class OrdemServicoController extends Controller
     {
         $id = $request->route('id');
 
-        $sql = "
-        SELECT
-            CAB.NUNOTA,
-            OSE.AD_NUMNIKKEY,
-            OSE.NUMOS           AS idOs,
-            OSE.NUMOSNIKKEY     AS numOs,
+        $os = OrdemServico::with([
+            'tecnico',
+            'cliente',
+            'cliente.endereco',
+            'cliente.bairro',
+            'cliente.cidade.uf',
+        ])->where('numos', $id)->firstOrFail();
 
-            CAB.CODEMP          AS idEmpresa,
-            EMP.NOMEFANTASIA    AS nomeEmpresa,
-            EMP.AD_ALVARAVIG    AS alvara,
-            EMP.AD_ALVARAVIGDTVAL AS vencimentoAlvara,
+        $cert    = Certificado::where('numos', $id)->first();
+        $empresa = $cert
+            ? Empresa::where('codemp_snk', $cert->codemp_snk)->first()
+            : Empresa::first();
 
-            PAR.RAZAOSOCIAL     AS razaoSocial,
-            PAR.NOMEPARC        AS nomeFantasia,
-            CONCAT(EDE.TIPO,' ',EDE.NOMEEND) AS logradouro,
-            PAR.NUMEND          AS numero,
-            BAI.NOMEBAI         AS bairro,
-            CID.NOMECID         AS cidade,
-            PAR.COMPLEMENTO     AS complemento,
-            STUFF(PAR.CEP, 6, 0, '-') AS cep,
-            UFS.UF              AS estado,
-            
-            OSE.CODTEC          AS idTecnico,
-            OSE.NOMETEC         AS nomeTecnico,
-            CONVERT(VARCHAR(10), OSE.HRFIN, 103) AS dataVisita,
-            CONVERT(VARCHAR(5), OSE.HRINI, 108)  AS horaInicio,
-            CONVERT(VARCHAR(5), OSE.HRFIN, 108)  AS horaFim
+        $cliente = $os->cliente;
 
-        FROM sankhya.AD_VGFOSE OSE
-
-        INNER JOIN sankhya.TGFCAB CAB
-            ON CAB.AD_NUMNIKKEY = OSE.AD_NUMNIKKEY
-            AND CAB.NUNOTA = (
-                SELECT MIN(C.NUNOTA)
-                FROM sankhya.TGFCAB C
-                WHERE C.AD_NUMNIKKEY = CAB.AD_NUMNIKKEY
-            )
-
-        INNER JOIN sankhya.TSIEMP EMP
-            ON EMP.CODEMP = CAB.CODEMP
-
-        INNER JOIN sankhya.TGFPAR PAR
-            ON PAR.CODPARC = CAB.CODPARC
-
-        INNER JOIN sankhya.TSIEND EDE
-            ON EDE.CODEND = PAR.CODEND
-
-        INNER JOIN sankhya.TSIBAI BAI
-            ON BAI.CODBAI = PAR.CODBAI
-
-        INNER JOIN sankhya.TSICID CID
-            ON CID.CODCID = PAR.CODCID
-
-        INNER JOIN sankhya.TSIUFS UFS
-            ON UFS.CODUF = CID.UF
-
-        WHERE OSE.NUMOS = {$id}
-        ";
-
-        $service = new SankhyaDbExplorerSPService();
-        $result = $service->fetchAll($sql);
-        $result = $service->mapDbExplorerResult($result)[0];
-
-        return response()->json($result);
+        return response()->json([
+            'NUNOTA'           => $cert?->nunota,
+            'AD_NUMNIKKEY'     => $os->ad_numnikkey,
+            'idOs'             => $os->numos,
+            'numOs'            => $os->ad_numnikkey,
+            'idEmpresa'        => $empresa?->codemp_snk,
+            'nomeEmpresa'      => $empresa?->nome_fantasia,
+            'alvara'           => $empresa?->alvara,
+            'vencimentoAlvara' => $empresa?->alvara_vencimento?->format('d/m/Y'),
+            'razaoSocial'      => $cliente?->razao_social,
+            'nomeFantasia'     => $cliente?->nome_fantasia,
+            'logradouro'       => $cliente?->endereco?->logradouro,
+            'numero'           => $cliente?->numero,
+            'bairro'           => $cliente?->bairro?->nome,
+            'cidade'           => $cliente?->cidade?->nome,
+            'complemento'      => $cliente?->complemento,
+            'cep'              => $cliente?->cep,
+            'estado'           => $cliente?->cidade?->uf?->sigla,
+            'idTecnico'        => $os->tecnico?->codtec_snk,
+            'nomeTecnico'      => $os->tecnico?->nome,
+            'dataVisita'       => $os->hrfin?->format('d/m/Y'),
+            'horaInicio'       => $os->hrini?->format('H:i'),
+            'horaFim'          => $os->hrfin?->format('H:i'),
+        ]);
     }
 
    public function index(Request $request)

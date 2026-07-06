@@ -16,32 +16,32 @@ class Kernel extends ConsoleKernel
         // ============================================================
 
         // Ordens de Serviço: core do sistema, atualiza a cada 15min
-        $schedule->command('sankhya:buscar-os')
+        $schedule->command('sankhya:sync-os')
             ->everyFifteenMinutes()
             ->withoutOverlapping(10)
             ->onOneServer()
             ->runInBackground();
 
         // Dependentes das OSs
-        $schedule->command('sankhya:buscar-previsoes-execucao')
+        $schedule->command('sankhya:sync-previsoes-execucao')
             ->everyFifteenMinutes()
             ->withoutOverlapping(10)
             ->onOneServer()
             ->runInBackground();
 
-        $schedule->command('sankhya:buscar-os-ambientes')
+        $schedule->command('sankhya:sync-os-ambientes')
             ->everyThirtyMinutes()
             ->withoutOverlapping(10)
             ->onOneServer()
             ->runInBackground();
 
-        $schedule->command('sankhya:buscar-produtos-utilizados')
+        $schedule->command('sankhya:sync-produtos-utilizados')
             ->everyThirtyMinutes()
             ->withoutOverlapping(10)
             ->onOneServer()
             ->runInBackground();
 
-        $schedule->command('sankhya:buscar-produtos-previstos')
+        $schedule->command('sankhya:sync-produtos-previstos')
             ->everyThirtyMinutes()
             ->withoutOverlapping(10)
             ->onOneServer()
@@ -51,15 +51,27 @@ class Kernel extends ConsoleKernel
         // DADOS SEMI-ESTÁTICOS — atualizam a cada hora
         // ============================================================
 
-        $schedule->command('sankhya:buscar-clientes')
+        $schedule->command('sankhya:sync-clientes')
             ->hourly()
             ->withoutOverlapping(20)
             ->onOneServer()
             ->runInBackground();
 
-        $schedule->command('sankhya:buscar-evidencias-pragas')
+        $schedule->command('sankhya:sync-evidencias-pragas')
             ->hourly()
             ->withoutOverlapping(20)
+            ->onOneServer()
+            ->runInBackground();
+
+        $schedule->command('sankhya:sync-pontos-monitoramento')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping(10)
+            ->onOneServer()
+            ->runInBackground();
+
+        $schedule->command('sankhya:sync-nao-conformidades')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping(10)
             ->onOneServer()
             ->runInBackground();
 
@@ -68,29 +80,41 @@ class Kernel extends ConsoleKernel
         // Espaçadas de 5 em 5 minutos para não sobrecarregar a API
         // ============================================================
 
-        $schedule->command('sankhya:buscar-tipo-equipamento')
+        $schedule->command('sankhya:sync-tipos-equipamento')
             ->dailyAt('03:00')->withoutOverlapping()->onOneServer();
 
-        $schedule->command('sankhya:buscar-tecnica-execucao')
+        $schedule->command('sankhya:sync-tecnicas-execucao')
             ->dailyAt('03:05')->withoutOverlapping()->onOneServer();
 
-        $schedule->command('sankhya:buscar-servicos')
+        $schedule->command('sankhya:sync-servicos')
             ->dailyAt('03:10')->withoutOverlapping()->onOneServer();
 
-        $schedule->command('sankhya:buscar-produtos')
+        $schedule->command('sankhya:sync-produtos')
             ->dailyAt('03:15')->withoutOverlapping()->onOneServer();
 
-        $schedule->command('sankhya:buscar-pragas')
+        $schedule->command('sankhya:sync-pragas')
             ->dailyAt('03:20')->withoutOverlapping()->onOneServer();
 
-        $schedule->command('sankhya:buscar-metodologias')
+        $schedule->command('sankhya:sync-metodologias')
             ->dailyAt('03:25')->withoutOverlapping()->onOneServer();
 
-        $schedule->command('sankhya:buscar-tipos-evidencia')
+        $schedule->command('sankhya:sync-tipos-evidencia')
             ->dailyAt('03:30')->withoutOverlapping()->onOneServer();
 
-        $schedule->command('sankhya:buscar-ambientes')
+        $schedule->command('sankhya:sync-ambientes')
             ->dailyAt('03:35')->withoutOverlapping()->onOneServer();
+
+        $schedule->command('sankhya:sync-tipos-nao-conformidade')
+            ->dailyAt('03:40')->withoutOverlapping()->onOneServer();
+
+        $schedule->command('sankhya:sync-empresas')
+            ->dailyAt('03:45')->withoutOverlapping()->onOneServer();
+
+        $schedule->command('sankhya:sync-tecnicos')
+            ->dailyAt('03:50')->withoutOverlapping()->onOneServer();
+
+        $schedule->command('sankhya:sync-certificados')
+            ->hourly()->withoutOverlapping(20)->onOneServer()->runInBackground();
 
         // ============================================================
         // SYNC COMPLETO — 1x por dia como garantia de consistência
