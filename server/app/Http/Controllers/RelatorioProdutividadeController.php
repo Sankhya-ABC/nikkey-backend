@@ -67,8 +67,8 @@ class RelatorioProdutividadeController extends Controller
         $tecnico = $osGroup->first()?->tecnico;
 
         $visitasAgendadas = $osGroup->count();
-        $osRealizadas = $osGroup->where('statusos', 'REALIZADA')->count();
-        $osNaoRealizadas = $osGroup->where('statusos', 'NAO_REALIZADA')->count();
+        $osRealizadas = $osGroup->where('statusos', 'Concluída')->count();
+        $osNaoRealizadas = $osGroup->where('statusos', '!=', 'Concluída')->count();
         $visitasPendentes = $visitasAgendadas - $osRealizadas;
 
         $horasTrabalhadas = $osGroup->sum(function ($os) {
