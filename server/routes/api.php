@@ -15,6 +15,7 @@ use App\Http\Controllers\DashboardClienteController;
 use App\Http\Controllers\RelatorioClienteController;
 use App\Http\Controllers\VisitaController;
 use App\Http\Controllers\CertificadoController;
+use App\Http\Controllers\SankhyaSyncController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -80,4 +81,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/certificados', [CertificadoController::class, 'getCertificados']);
     Route::get('/certificados/imprimir', [CertificadoController::class, 'getCertificadoByIdOS']);
+
+    Route::post('/sankhya/sync-all', [SankhyaSyncController::class, 'syncAll']);
 });
