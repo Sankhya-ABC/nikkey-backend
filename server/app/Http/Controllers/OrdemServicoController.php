@@ -63,7 +63,8 @@ class OrdemServicoController extends Controller
         $search     = trim($request->query('search', ''));
         $dataInicio = $request->query('dataInicio');
         $dataFim    = $request->query('dataFim');
-        $idCliente  = $request->query('idCliente'); 
+        $idCliente  = $request->query('idCliente');
+        $tipo       = $request->query('tipo');
 
         if (!$dataInicio || !$dataFim) {
             return response()->json([
@@ -80,6 +81,10 @@ class OrdemServicoController extends Controller
             });
 
         $query = VisibilityPolicy::apply($user, $query, 'cliente_id', $idCliente);
+
+        if (!empty($tipo)) {
+            $query->where('tipoos', $tipo);
+        }
 
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -178,6 +183,7 @@ class OrdemServicoController extends Controller
         return [
             'numOS'      => $os->numos,
             'status'     => strtoupper($os->statusos ?? ''),
+            'tipo'       => $os->tipoos,
             'data'       => $os->hrini?->toDateString() ?? null,
             'horaInicio' => $os->hrini?->format('H:i') ?? null,
             'horaFim'    => $os->hrfin?->format('H:i') ?? null,
